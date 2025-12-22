@@ -22,7 +22,7 @@ __SubFlux — Django-проект с API-first подходом.__
 - пользователь 
 - статус (trial, active, paused, cancelled, expired) 
 
-### BillingSchedule 
+### BillingSchedule
 Отвечает на вопрос __«когда и как происходят списания»__.
 - период (monthly / yearly / custom) 
 - last_payment_date 
