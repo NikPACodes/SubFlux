@@ -1,0 +1,103 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.2.5 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36" version="28.2.5">
+  <diagram name="Page-1" id="fFDVa9T7LTiJYNI0P9eM">
+    <mxGraphModel dx="38" dy="1243" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-1" value="&lt;h2&gt;Общая архитектура системы проекта &quot;SubFlux&quot;&lt;/h2&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;gradientColor=#7ea6e0;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1670" y="20" width="790" height="720" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-8" value="Инфраструктура" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;gradientColor=#b3b3b3;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-1">
+          <mxGeometry x="210" y="560" width="370" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-9" value="Redis кэш" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-8">
+          <mxGeometry x="150" y="40" width="80" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-10" value="PosgreSQL" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-8">
+          <mxGeometry x="260" y="40" width="79" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-65" value="Celery" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-8">
+          <mxGeometry x="30" y="55" width="90" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-64" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="aRJSAngKUPMNbTrL3Dme-1" source="aRJSAngKUPMNbTrL3Dme-14" target="aRJSAngKUPMNbTrL3Dme-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-14" value="Уровень Django API (DRF)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;gradientColor=#b3b3b3;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-1">
+          <mxGeometry x="55" y="190" width="680" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-16" value="DRF ViewSet" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-14">
+          <mxGeometry x="30" y="40" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-17" value="Аутентификация JWT" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-14">
+          <mxGeometry x="340" y="40" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-18" value="Rate Limiting" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-14">
+          <mxGeometry x="550" y="40" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-47" value="Serializers" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-14">
+          <mxGeometry x="190" y="40" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-66" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="aRJSAngKUPMNbTrL3Dme-1" source="aRJSAngKUPMNbTrL3Dme-19" target="aRJSAngKUPMNbTrL3Dme-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-19" value="&lt;span style=&quot;&quot;&gt;Бизнес-логика&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;gradientColor=#b3b3b3;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-1">
+          <mxGeometry x="30" y="330" width="730" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-23" value="AllAuth/&lt;span style=&quot;&quot; class=&quot;Yjhzub&quot;&gt;&lt;div style=&quot;display: contents&quot; data-subtree=&quot;aimfl&quot;&gt;OAuth 2.0&lt;/div&gt;&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-19">
+          <mxGeometry x="550" y="40" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-52" value="Сервис подписок" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-19">
+          <mxGeometry x="30" y="40" width="130" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-53" value="Subscription" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-52">
+          <mxGeometry y="30" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-54" value="BillingSchedule" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-52">
+          <mxGeometry y="60" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-55" value="PriceHistory" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-52">
+          <mxGeometry y="90" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-60" value="Сервис уведомлений" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-19">
+          <mxGeometry x="190" y="40" width="160" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-61" value="NotificationSettings" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-60">
+          <mxGeometry y="30" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-62" value="NotificationEvent" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-60">
+          <mxGeometry y="60" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-63" value="DeliveryAttempt" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-60">
+          <mxGeometry y="90" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-56" value="Сервис аналитики" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-19">
+          <mxGeometry x="380" y="40" width="140" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-57" value="Analytics" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-56">
+          <mxGeometry y="30" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-58" value="Forecasts" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-56">
+          <mxGeometry y="60" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-51" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="aRJSAngKUPMNbTrL3Dme-1" source="aRJSAngKUPMNbTrL3Dme-24" target="aRJSAngKUPMNbTrL3Dme-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-24" value="&lt;span style=&quot;&quot;&gt;Клиентский уровень&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;gradientColor=#b3b3b3;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-1">
+          <mxGeometry x="55" y="50" width="680" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-25" value="Веб-интерфейс" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-24">
+          <mxGeometry x="30" y="40" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-26" value="Admin панель Django" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-24">
+          <mxGeometry x="510" y="40" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-27" value="Телеграм бот" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-24">
+          <mxGeometry x="180" y="40" width="120" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="aRJSAngKUPMNbTrL3Dme-48" value="Мобильное приложение&lt;div&gt;(в будущем)&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="aRJSAngKUPMNbTrL3Dme-24">
+          <mxGeometry x="330" y="40" width="150" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
