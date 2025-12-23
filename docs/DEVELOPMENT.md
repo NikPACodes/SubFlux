@@ -18,6 +18,7 @@
 - [ ] BillingSchedule
 - [ ] PriceHistory
 - [ ] Категории подписок
+- [ ] Provider
 - [ ] Расчёт дат списаний
 - [ ] DRF API для подписок
 

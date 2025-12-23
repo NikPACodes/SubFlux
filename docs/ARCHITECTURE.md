@@ -138,6 +138,7 @@ __SubFlux — Django-проект с API-first подходом.__
     │   │   │   ├── init.py
     │   │   │   ├── subscription.py      # Subscription
     │   │   │   ├── category.py          # Category (или SubscriptionCategory)
+    │   │   │   ├── provider.py          # Provider (Сервис)
     │   │   │   ├── billing_schedule.py  # BillingSchedule
     │   │   │   └── price_history.py     # PriceHistory    
     │   │   ├── services/
