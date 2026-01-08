@@ -15,6 +15,13 @@ def user_data():
     }
 
 @pytest.fixture()
+def user_pass():
+    """
+    Тестовый пороль
+    """
+    return "StrongTestPass123!"
+
+@pytest.fixture()
 def create_user(db):
     """
     Быстрое создание пользователя в тестах:

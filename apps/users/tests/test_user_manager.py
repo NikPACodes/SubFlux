@@ -60,7 +60,7 @@ def test_create_user_without_password_sets_unusable(user_data):
 
 
 @pytest.mark.django_db
-def test_create_superuser_success():
+def test_create_superuser_success(user_pass):
     """
     Проверяем корректность создание superuser
     - флаги staff/superuser = True.
@@ -68,15 +68,15 @@ def test_create_superuser_success():
     test_su = User.objects.create_superuser(
         email="test_admin@test.com",
         username="test_admin",
-        password="StrongAdminPass123!",
+        password=user_pass,
     )
     assert test_su.is_staff is True
     assert test_su.is_superuser is True
-    assert test_su.check_password("StrongAdminPass123!") is True
+    assert test_su.check_password(user_pass) is True
 
 
 @pytest.mark.django_db
-def test_create_superuser_requires_is_staff_true():
+def test_create_superuser_requires_is_staff_true(user_pass):
     """
     Если кто-то пытается создать суперпользователя с is_staff = False — ошибка.
     """
@@ -84,13 +84,13 @@ def test_create_superuser_requires_is_staff_true():
         User.objects.create_superuser(
             email="test_admin2@test.com",
             username="test_admin2",
-            password="StrongAdminPass123!",
+            password=user_pass,
             is_staff=False,
         )
 
 
 @pytest.mark.django_db
-def test_create_superuser_requires_is_superuser_true():
+def test_create_superuser_requires_is_superuser_true(user_pass):
     """
     Если кто-то пытается создать суперпользователя с is_superuser=False — тоже ошибка.
     """
@@ -98,6 +98,6 @@ def test_create_superuser_requires_is_superuser_true():
         User.objects.create_superuser(
             email="test_admin3@example.com",
             username="test_admin3",
-            password="StrongAdminPass123!",
+            password=user_pass,
             is_superuser=False,
         )
