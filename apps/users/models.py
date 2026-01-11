@@ -54,5 +54,5 @@ class User(AbstractUser):
 
     objects = UserManager()
 
-    def __str__(self)->str:
+    def __str__(self):
         return self.username
