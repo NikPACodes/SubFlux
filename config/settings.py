@@ -44,8 +44,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.users.apps.UsersConfig',
+
     'phonenumber_field',
+
+    'apps.users.apps.UsersConfig',
+    'apps.subscriptions.apps.SubscriptionsConfig',
+
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -114,10 +119,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
-USE_I18N = True
+TIME_ZONE = 'Asia/Yekaterinburg'
+USE_I18N = True # Включаем интернационализацию
 USE_TZ = True
 
 

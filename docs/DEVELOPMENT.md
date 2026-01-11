@@ -13,7 +13,7 @@
 
 ## Этап 1. Базовое ядро
 Статус: в работе
-
+- [X] Users
 - [ ] Subscription
 - [ ] BillingSchedule
 - [ ] PriceHistory
