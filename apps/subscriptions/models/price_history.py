@@ -36,7 +36,7 @@ class PriceHistory(models.Model):
     # Источник данных
     source = models.CharField(max_length=16, choices=Source.choices, default=Source.MANUAL)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "price_history"
