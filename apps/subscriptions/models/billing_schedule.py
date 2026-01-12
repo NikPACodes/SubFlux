@@ -47,8 +47,8 @@ class BillingSchedule(models.Model):
     # При изменении правила - создаем новое is_current=True, старое помечаем False
     is_current = models.BooleanField(default=True, db_index=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    create_at = models.DateTimeField(auto_now_add=True)
+    update_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "billing_schedules"

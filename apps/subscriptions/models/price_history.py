@@ -3,6 +3,7 @@ from django.db import models
 
 from .subscription import Subscription
 
+from utils.validators import validator_currency
 
 class PriceHistory(models.Model):
     """
@@ -25,7 +26,7 @@ class PriceHistory(models.Model):
     subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name="price_history")
 
     amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
-    currency = models.CharField(max_length=3)
+    currency = models.CharField(max_length=3, validators=[validator_currency])
 
     # Дата начала действия
     effective_from = models.DateTimeField(db_index=True)
@@ -36,7 +37,7 @@ class PriceHistory(models.Model):
     # Источник данных
     source = models.CharField(max_length=16, choices=Source.choices, default=Source.MANUAL)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    create_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "price_history"
