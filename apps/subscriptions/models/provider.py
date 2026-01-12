@@ -1,5 +1,7 @@
 from django.db import models
 
+from utils.validators import validator_region
+
 class Provider(models.Model):
     """
     Provider - каталог сервисов/провайдеров подписок.
@@ -63,10 +65,9 @@ class ProviderLink(models.Model):
 
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name="links")
 
-    # TODO Рассмотреть переработку поля в CountryField (django-countries) с расширением для значения GLOBAL
     # Регион поле Char с соответствием формату:
     # ISO 3166-1 alpha-2 (US, DE, RU, ...) или GLOBAL
-    region = models.CharField(max_length=8, default="GLOBAL", db_index=True)
+    region = models.CharField(max_length=8, default="GLOBAL", db_index=True, validators=[validator_region])
 
     platform = models.CharField(max_length=10, choices=Platform.choices, default=Platform.WEB, db_index=True)
     link_type = models.CharField(max_length=10, choices=LinkType.choices, db_index=True)

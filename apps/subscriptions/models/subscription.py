@@ -5,6 +5,8 @@ from django.db import models
 from .category import Category
 from .provider import Provider
 
+from utils.validators import validator_currency, validator_timezone
+
 
 class Subscription(models.Model):
     """
@@ -53,17 +55,16 @@ class Subscription(models.Model):
     # Денормализация текущей цены (для удобства запросов)
     current_price_amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
 
-    # TODO передалать в справочник кодов валют
     # Код валюты (по началу для упрощения Char, в дальнейшем переработается в справочник)
     # ISO 4217 (USD/EUR/RUB...)
-    current_price_currency = models.CharField(max_length=3)
+    current_price_currency = models.CharField(max_length=3, validators=[validator_currency])
 
     # Денормализация ближайшего списания (для удобства запросов, истина — BillingSchedule.next_run_at)
     next_billing_at = models.DateTimeField(blank=True, null=True, db_index=True)
 
     # IANA timezone ("Asia/Yekaterinburg", "Europe/Moscow"...)
     # Используется дял корректного расчета дат списания с учетом локального времени подписки
-    billing_timezone = models.CharField(max_length=64, blank=True, null=True)
+    billing_timezone = models.CharField(max_length=64, blank=True, null=True, validators=[validator_timezone])
 
     # Факт последнего списания
     last_billed_at = models.DateTimeField(blank=True, null=True)
