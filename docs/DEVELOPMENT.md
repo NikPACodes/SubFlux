@@ -14,11 +14,11 @@
 ## Этап 1. Базовое ядро
 Статус: в работе
 - [X] Users
-- [ ] Subscription
-- [ ] BillingSchedule
-- [ ] PriceHistory
-- [ ] Категории подписок
-- [ ] Provider
+- [X] Subscription
+- [X] BillingSchedule
+- [X] PriceHistory
+- [X] Категории подписок
+- [X] Provider
 - [ ] Расчёт дат списаний
 - [ ] DRF API для подписок
 

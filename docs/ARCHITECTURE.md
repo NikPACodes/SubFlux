@@ -146,7 +146,6 @@ __SubFlux — Django-проект с API-first подходом.__
     │   │   ├── migrations/
     │   │   ├── init.py
     │   │   ├── admin.py
-    │   │   ├── tasks/             # Celery задачи
     │   │   ├── models/
     │   │   │   ├── init.py
     │   │   │   ├── subscription.py      # Subscription
@@ -162,7 +161,7 @@ __SubFlux — Django-проект с API-first подходом.__
     │   │   │   ├── serializers.py
     │   │   │   ├── views.py
     │   │   │   └── urls.py
-    │   │   └── tasks/
+    │   │   └── tasks/                    # Celery задачи
     │   │       ├── init.py
     │   │       └── maintenance.py       # пересчёты next_payment_date/health tasks
     │   ├── analytics/             # Аналитика и отчеты
