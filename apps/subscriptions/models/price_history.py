@@ -4,6 +4,8 @@ from django.db import models
 from .subscription import Subscription
 
 from utils.validators import validator_currency
+from utils.enum import Source
+
 
 class PriceHistory(models.Model):
     """
@@ -17,12 +19,6 @@ class PriceHistory(models.Model):
     Для быстрого поиска current_price_* хранится в Subscription
     """
 
-    # Источник данных о цене
-    class Source(models.TextChoices):
-        MANUAL = "manual", "Manual"                # Ручной ввод
-        IMPORT = "import", "Import"                # Импорт из файла
-        INTEGRATION = "integration", "Integration" # Интеграция
-
     subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name="price_history")
 
     amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
@@ -34,7 +30,7 @@ class PriceHistory(models.Model):
     effective_to = models.DateTimeField(blank=True, null=True)
     # Причина изменения цены
     change_reason = models.CharField(max_length=255, blank=True, null=True)
-    # Источник данных
+    # Источник данных о цене
     source = models.CharField(max_length=16, choices=Source.choices, default=Source.MANUAL)
 
     create_at = models.DateTimeField(auto_now_add=True)
