@@ -48,3 +48,13 @@ class LinkType(models.TextChoices):
     SUPPORT = 'support', 'Support'
     # Тарифы/Цены
     PRICING = 'pricing', 'Pricing'
+
+
+class PeriodUnit(models.TextChoices):
+    """
+    Единица периода
+    """
+    DAY = "day", "Day"
+    WEEK = "week", "Week"
+    MONTH = "month", "Month"
+    YEAR = "year", "Year"

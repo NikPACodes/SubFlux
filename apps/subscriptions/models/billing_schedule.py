@@ -3,6 +3,8 @@ from django.db import models
 
 from .subscription import Subscription
 
+from utils.enum import PeriodUnit
+
 
 class BillingSchedule(models.Model):
     """
@@ -16,13 +18,6 @@ class BillingSchedule(models.Model):
 
     Логика вычисления next_run_at и обновление Subscription.next_billing_at находится в services/
     """
-
-    # Единица периода (используем Choices т.к. от него зависит логика расчетов)
-    class PeriodUnit(models.TextChoices):
-        DAY = "day", "Day"
-        WEEK = "week", "Week"
-        MONTH = "month", "Month"
-        YEAR = "year", "Year"
 
     subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name="billing_schedules")
     period_unit = models.CharField(max_length=8, choices=PeriodUnit.choices)

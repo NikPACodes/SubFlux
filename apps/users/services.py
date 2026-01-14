@@ -6,7 +6,7 @@ User = get_user_model()
 @transaction.atomic
 def register_user(*, email: str, username: str, password: str | None = None,
                   first_name: str | None = None, last_name: str | None = None,
-                  phone: str | None = None, bio: str = None, gender: str = "U", birth_date=None) -> User:
+                  phone: str | None = None, bio: str = None, gender: str = "U", birth_date = None) -> User:
     """
     Сценарий регистрации (создания) пользователя
 
