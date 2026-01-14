@@ -1,6 +1,8 @@
 from django.db import models
 
 from utils.validators import validator_region
+from utils.enum import Platform, LinkType
+
 
 class Provider(models.Model):
     """
@@ -44,24 +46,6 @@ class ProviderLink(models.Model):
     - для разных платформ (platform)
     - для разных типов ссылок (link_type)
     """
-
-    class Platform(models.TextChoices):
-        WEB = 'web', 'Web'
-        IOS = 'ios', 'IOS'
-        ANDROID = 'android', 'Android'
-        DESKTOP = 'desktop', 'Desktop'
-        TV = 'tv', 'TV'
-        UNKNOWN = 'unknown', 'Unknown'
-
-    class LinkType(models.TextChoices):
-        # Управление оплатой/подпиской
-        BILLING = 'billing', 'Billing'
-        # Аккаунт/ЛК
-        ACCOUNT = 'account', 'Account'
-        # Поддержка
-        SUPPORT = 'support', 'Support'
-        # Тарифы/Цены
-        PRICING = 'pricing', 'Pricing'
 
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name="links")
 

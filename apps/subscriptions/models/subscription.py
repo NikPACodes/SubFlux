@@ -6,6 +6,7 @@ from .category import Category
 from .provider import Provider
 
 from utils.validators import validator_currency, validator_timezone
+from utils.enum import Status
 
 
 class Subscription(models.Model):
@@ -19,13 +20,6 @@ class Subscription(models.Model):
     - поля для UI (заметки, метки, платежный метод)
     - денормализацию "Текущей цены" и "Следующего списания" для быстрого поиска
     """
-
-    class Status(models.TextChoices):
-        ACTIVE = "active", "Active"
-        PAUSED = "paused", "Paused"
-        CANCELED = "canceled", "Canceled"
-        TRIAL = "trial", "Trial"
-        EXPIRED = "expired", "Expired"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name="subscriptions", db_index=True)
