@@ -6,7 +6,7 @@ from .category import Category
 from .provider import Provider
 
 from utils.validators import validator_currency, validator_timezone
-from utils.enum import Status
+from utils.enums import Status
 
 
 class Subscription(models.Model):

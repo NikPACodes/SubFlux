@@ -17,7 +17,7 @@ from django.core.exceptions import ValidationError
 
 from apps.subscriptions.models import BillingSchedule, Subscription
 
-from utils.enum import PeriodUnit
+from utils.enums import PeriodUnit
 from utils.date_calculator import get_tzinfo, add_months, clamp_day_to_month, next_week
 
 
