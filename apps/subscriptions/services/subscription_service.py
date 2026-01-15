@@ -22,7 +22,7 @@ from apps.subscriptions.services.billing_service import (recalculate_schedule_ne
     validate_billing_schedule_params,
 )
 
-from utils.enum import Status, Source
+from utils.enums import Status, Source
 
 
 @dataclass(frozen=True)

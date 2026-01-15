@@ -3,7 +3,7 @@ from django.db import models
 
 from .subscription import Subscription
 
-from utils.enum import PeriodUnit
+from utils.enums import PeriodUnit
 
 
 class BillingSchedule(models.Model):

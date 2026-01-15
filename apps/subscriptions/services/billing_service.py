@@ -17,7 +17,7 @@ from django.core.exceptions import ValidationError
 
 from apps.subscriptions.models import BillingSchedule, Subscription
 
-from utils.enum import PeriodUnit
+from utils.enums import PeriodUnit
 from utils.date_calculator import get_tzinfo, add_months, clamp_day_to_month, next_week
 
 
@@ -82,18 +82,18 @@ def _next_for_year(dtime: datetime, interval: int) -> datetime:
 
 
 @transaction.atomic
-def recalculate_schedule_next_run(schedule: BillingSchedule, *, dtime: datetime) -> BillingSchedule:
+def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetime) -> BillingSchedule:
     """
     Пересчитывает schedule.next_run_at, учитывая timezone подписки.
 
-    dtime — “опорный момент”, от которого считаем следующий run.
+    from_dt — “опорный момент”, от которого считаем следующий run.
     Обычно это timezone.now().
     """
     sub = schedule.subscription
     tzone = get_tzinfo(sub)
 
     # Переводим опорный момент в локальную зону “подписки”
-    local_dtime = timezone.localtime(dtime, tzone)
+    local_dtime = timezone.localtime(from_dt, tzone)
 
     validate_billing_schedule_params(period_unit=schedule.period_unit,
                                      period_interval=schedule.period_interval,
@@ -101,7 +101,7 @@ def recalculate_schedule_next_run(schedule: BillingSchedule, *, dtime: datetime)
                                      anchor_weekday=schedule.anchor_weekday,
                                      grace_days=schedule.grace_days)
 
-    # Trial: если trial_ends_at позже dtime, считаем от конца trial
+    # Trial: если trial_ends_at позже from_dt, считаем от конца trial
     if schedule.trial_ends_at:
         local_trial = timezone.localtime(schedule.trial_ends_at, tzone)
         if local_trial > local_dtime:

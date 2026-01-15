@@ -13,13 +13,17 @@
 
 ## Этап 1. Базовое ядро
 Статус: в работе
+
+### Модели:
 - [X] Users
-- [X] Subscription
+- [X] Subscription 
 - [X] BillingSchedule
-- [X] PriceHistory
-- [X] Категории подписок
-- [X] Provider
-- [ ] Расчёт дат списаний
+- [X] Category
+- [X] Provider (Provider + ProviderLink)
+- [ ] Price (VerifiedPrice + PriceHistory)
+- [ ] Payment 
+- [X] Расчёт дат списаний
+- [ ] Обновление и установка цен
 - [ ] DRF API для подписок
 
 Цель: корректная доменная модель и базовая работа с подписками.

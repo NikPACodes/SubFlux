@@ -1,7 +1,7 @@
 from django.db import models
 
 from utils.validators import validator_region
-from utils.enum import Platform, LinkType
+from utils.enums import Platform, LinkType
 
 
 class Provider(models.Model):
@@ -57,6 +57,8 @@ class ProviderLink(models.Model):
     link_type = models.CharField(max_length=10, choices=LinkType.choices, db_index=True)
     url = models.URLField()
 
+    # Дата последней проверки ссылки
+    last_checked_at = models.DateTimeField(blank=True, null=True)
     is_active = models.BooleanField(default=True, db_index=True)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)

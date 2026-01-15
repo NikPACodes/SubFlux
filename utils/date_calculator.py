@@ -39,8 +39,8 @@ def add_months(dtime: datetime, months: int) -> datetime:
     Добавляет N месяцев к datetime сохранением времени.
     """
     # Пояснение логики:
-    # Т.к. в месяца начинаются с 1...12
-    # При расчете остатка от деления на 12 мы можем получить 0...11
+    # Т.к. месяца начинаются с 1...12
+    # а при расчете остатка от деления на 12 мы можем получить 0...11
     # Следовательно:
     # 1) либо через if мы должны менять 0 на декабрь
     # 2) либо сначала вычтем 1 месяц а после получения остатка от деления вернем его, и значения будут в интервале 1...12
@@ -51,10 +51,16 @@ def add_months(dtime: datetime, months: int) -> datetime:
     return dtime.replace(year=year, month=month, day=day)
 
 
-def next_week(dtime: datetime, interval: int, weekday: int) -> datetime:
+def next_week(dtime: datetime, weekday: int, interval: int = 1) -> datetime:
     """
     Ищем следующую дату нужного дня недели (weekday 0=Mon...6=Sun) с шагом N недель (interval)
     """
+    # Пояснение логики:
+    # Считаем сколько дней от текущего дня недели (current) до искомого (weekday)
+    # Проверяем 2 варианта:
+    # 1) если число дней (days_ahead) 0 -> значит настал нужный день недели и мы ищем следующую дату
+    # 2) если число дней (days_ahead) != 0 -> значит до даты days_ahead дней
+    #    (в случае если интервал больше 1 недели, то добавляем недостающее число недель)
     current = dtime.weekday()
     days_ahead = (weekday - current) % 7
     if days_ahead == 0:

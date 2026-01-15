@@ -15,51 +15,131 @@ __SubFlux — Django-проект с API-first подходом.__
 ---
 
 ## 🧩 Доменная модель
-### Subscription 
+### Subscription - подписка пользователя.
 Отвечает на вопрос __«на что подписан пользователь»__. 
-- сервис 
-- категория 
-- пользователь 
-- статус (trial, active, paused, cancelled, expired) 
+- Сервис 
+- Категория 
+- Пользователь 
+- Статус
 
-### Provider
+__Одна запись__ = __одна подписка__ на конкретный сервис (или созданная вручную)  
+
+### Provider - каталог сервисов/провайдеров подписок.
 Справочная сущность, описывающая сервис подписки (Netflix, Spotify и т.д.).
 - Название
 - Описание
-- Ссылка на официальный сайт
-- Ссылка на оплату
 - Дату последнего обновления ссылок
 
-### BillingSchedule
+### ProviderLink - таблица ссылок сервисов по регионам и платформам.
+Справочная сущность со _ссылками провайдера_ (официальные страницы оплаты/управления/отмены),
+которые могут отличаться по региону/платформе/типов.
+- Провайдер
+- Тип ссылки/Платформа/Регион
+- Ссылка
+
+У _одного провайдера_ может быть _несколько_ ссылок с разными регионами, платформами, типами.
+Но __только одна__ ссылка с ключом: _регион + платформа + тип_
+
+### Category - категория подписки
+Справочная сущность с категорией подписки
+- Название
+- Сортировка
+
+### BillingSchedule - правила списания + указатель следующего списания
 Отвечает на вопрос __«когда и как происходят списания»__.
-- период (monthly / yearly / custom) 
-- last_payment_date 
-- next_payment_date
+- Подписка
+- Период
+- Дата следующего списание
 
-📌 Subscription и BillingSchedule — разные ответственности. 
-Связь: __1 Subscription → 1 BillingSchedule__
+Фактически используется модель «несколько BillingSchedule на подписку, одно актуальное (is_current=True)».
+Это позволяет изменять расписание без потери истории.
 
-### PriceHistory 
-Неизменяемая история изменения цен. 
-- цена 
-- валюта 
-- причина изменения 
-- дата 
+### VerifiedPrice - справочник подтвержденных цен провайдера.
+Доверенная (подтверждённая) цена тарифа провайдера.
+- Провайдер
+- Источник обновления
+- Регион/Валюта/Платформа/Тариф
+- Цена 
 
-Используется для: 
-- аналитики 
-- прогнозирования 
-- отслеживания динамики цен 
+Используется как источник истины для:
+- выбора тарифов пользователем
+- автоматических синхронизаций
+- администраторских обновлений цен
 
+Цена _зависит от контекста_, поэтому хранится не как “одна цена на провайдера”, 
+а как __набор версий по ключу__: регион/валюта/период/платформа/план.
 
-### Состояния подписки
-| Состояние    | Описание        |
-|--------------|-----------------|
-| trial        | Пробный период  |
-| active       | Активна         |
-| pause        | Заморожена      |
-| cancelled    | Отменена        |
-| expired      | Завершена       |
+Изменение VerifiedPrice __не перезаписывают прошлые данные__, а влияют только на будущие интервалы цен у активных подписок.
+
+### PriceHistory - история изменения цен подписки
+История изменения цены по конкретной пользовательской подписки.
+
+Правила хранения:
+1) __Verified price mode__ 
+   - PriceHistory хранит ссылку на VerifiedPrice
+   - поля amount и currency не заполняются
+2) __Manual price mode__ 
+   - поля amount и currency обязательны
+   - ссылка на VerifiedPrice отсутствует
+
+Каждая запись действует в интервале: effective_from → effective_to.
+__1 Subscription → 1 активная запись PriceHistory__ на подписку (effective_to = NULL)
+
+Таким образом, PriceHistory отражает фактическую цену подписки пользователя, а не справочник тарифов.
+
+### Payment - — факт списания средств по подписке
+Модель используется для учёта фактически произошедших платежей _«что реально было»_ и __не является платёжной системой__.
+- Подписка
+- Сумму и Валюту списания
+- Дата оплаты
+- Источник данных
+
+Платёжные реквизиты (карты, счета) не хранятся.
+
+### ENUM 
+Все ENUM/Choices вынесены в отдельный файл
+
+#### Состояния подписки (Status)
+| Состояние   | Описание        |
+|-------------|-----------------|
+| trial       | Пробный период  |
+| active      | Активна         |
+| paused      | Заморожена      |
+| canceled    | Отменена        |
+| expired     | Завершена       |
+
+#### Источник данных (Source)
+| Источник    | Описание        |
+|-------------|-----------------|
+| manual      | Ручной ввод     |
+| import      | Импорт из файла |
+| integration | Интеграция      |
+
+#### Тип платформы (Platform)
+| Платформа | Описание      |
+|-----------|---------------|
+| web       | WEB-интерфейс |
+| ios       | IOS           |
+| android   | Android       |
+| desktop   | ПК            |
+| tv        | TV            |
+| unknown   | Не определено |
+
+#### Тип ссылки (LinkType)
+| Тип       | Описание                     |
+|-----------|------------------------------|
+| billing   | Управление оплатой/подпиской |
+| account   | Аккаунт/ЛК                   |
+| support   | Поддержка                    |
+| pricing   | Тарифы/Цены                  |
+
+#### Период (PeriodUnit)
+| Период  | Описание |
+|---------|----------|
+| day     | День     |
+| week    | Неделя   |
+| month   | Месяц    |
+| year    | Год      |
 
 ---
 
@@ -70,8 +150,10 @@ __SubFlux — Django-проект с API-first подходом.__
 3. Service layer:
    - создаёт Subscription
    - создаёт BillingSchedule
-   - рассчитывает next_payment_date
+   - рассчитывает next_run_at
 4. Создаётся запись PriceHistory
+   - если найдена VerifiedPrice → создаётся PriceHistory со ссылкой на VerifiedPrice
+   - если ручного ввода → создаётся manual PriceHistory по данным пользователя)
 5. После commit:
    - планируются уведомления
    - обновляется аналитика
@@ -82,7 +164,20 @@ __SubFlux — Django-проект с API-first подходом.__
 3. Генерируются события напоминаний
 4. Уведомления доставляются по каналам
 
+### Подтверждение оплаты (факт платежа)
+1. Пользователь добавляет Payment (или платеж импортируется)
+2. Service layer обновляет BillingSchedule next_run_at
+3. Аналитика использует Payment как источник факта (‘что было’)
+
+### Обновление каталога цен (VerifiedPrice)
+1. Админ/API/синхронизация создаёт новую версию VerifiedPrice (valid_from)
+2. Предыдущая версия закрывается (valid_to)
+3. Для подписок, которые используют официальную цену (нет manual override):
+   - активная PriceHistory закрывается (effective_to = T)
+   - создаётся новая PriceHistory со ссылкой на новую VerifiedPrice (effective_from)
+
 ---
+
 
 ## 🔔 Уведомления 
 Уведомления строятся на событиях:
@@ -97,6 +192,7 @@ __SubFlux — Django-проект с API-first подходом.__
 События отделены от транспорта доставки. 
 
 ---
+
 
 ## 📊 Аналитика и прогнозы
 ### Analytics 
@@ -121,40 +217,38 @@ __SubFlux — Django-проект с API-first подходом.__
 ```
     subflux/
     ├── config/                      # Конфигурация проекта
+    │   ├── init.py        
     │   ├── settings/        
     │   │   ├── init.py
     │   │   ├── base.py
     │   │   ├── dev.py
     │   │   └── prod.py
     │   ├── urls.py
-    │   ├── celery.py
-    │   └── init.py
+    │   └── celery.py
     ├── apps/
     │   ├── init.py
     │   ├── users/                  # Пользователь и профиль
     │   │   ├── migrations/
-    │   │   ├── init.py
     │   │   ├── admin.py
+    │   │   ├── managers.py
     │   │   ├── services.py
     │   │   ├── models.py
     │   │   ├── api/
     │   │   │   ├── serializers.py
-    │   │   │   ├── views.py           ???
-    │   │   │   └── urls.py            ???
+    │   │   │   ├── views.py           
+    │   │   │   └── urls.py            
     │   │   └── urls.py
     │   ├── subscriptions/          # Основное приложение
     │   │   ├── migrations/
-    │   │   ├── init.py
     │   │   ├── admin.py
     │   │   ├── models/
-    │   │   │   ├── init.py
     │   │   │   ├── subscription.py      # Subscription
     │   │   │   ├── category.py          # Category (или SubscriptionCategory)
-    │   │   │   ├── provider.py          # Provider (Сервис)
+    │   │   │   ├── provider.py          # Provider (Сервис) + ProviderLink
     │   │   │   ├── billing_schedule.py  # BillingSchedule
-    │   │   │   └── price_history.py     # PriceHistory    
+    │   │   │   ├── price.py             # VerifiedPrice + PriceHistory
+    │   │   │   └── payment.py           # Payment  
     │   │   ├── services/
-    │   │   │   ├── init.py
     │   │   │   ├── subscription_service.py
     │   │   │   └── billing_service.py
     │   │   ├── api/
@@ -162,17 +256,12 @@ __SubFlux — Django-проект с API-first подходом.__
     │   │   │   ├── views.py
     │   │   │   └── urls.py
     │   │   └── tasks/                    # Celery задачи
-    │   │       ├── init.py
-    │   │       └── maintenance.py       # пересчёты next_payment_date/health tasks
+    │   │       └── maintenance.py       # пересчёты next_run_at
     │   ├── analytics/             # Аналитика и отчеты
-    │   │   ├── init.py
     │   │   ├── admin.py
     │   │   ├── migrations/
     │   │   ├── models/
-    │   │   │   ├── init.py
-    │   │   │   └── aggregates.py        # (опционально) materialized aggregates
     │   │   ├── services/
-    │   │   │   ├── init.py
     │   │   │   ├── aggregations.py
     │   │   │   ├── reports.py
     │   │   │   └── forecasts.py
@@ -181,20 +270,16 @@ __SubFlux — Django-проект с API-first подходом.__
     │   │   │   ├── views.py
     │   │   │   └── urls.py
     │   │   └── tasks/
-    │   │       ├── init.py
     │   │       └── recompute.py         # пересчёт агрегатов/кеша 
     │   ├── notifications/         # Уведомления
-    │   │   ├── init.py
     │   │   ├── admin.py
     │   │   ├── migrations/
     │   │   ├── templates/         # Шаблоны сообщений
     │   │   ├── models/
-    │   │   │   ├── init.py
     │   │   │   ├── notification_event.py   # NotificationEvent
     │   │   │   ├── delivery_attempt.py     # DeliveryAttempt (лог доставок/ретраи)
     │   │   │   └── notification_settings.py# NotificationSettings (каналы/дни)
     │   │   ├── services/
-    │   │   │   ├── init.py
     │   │   │   ├── dispatcher.py           # создаёт события/планирует отправку
     │   │   │   └── channels.py             # Email/Telegram senders
     │   │   ├── api/
@@ -206,13 +291,12 @@ __SubFlux — Django-проект с API-first подходом.__
     │   │       ├── scheduler.py            # daily: генерирует события
     │   │       └── sender.py               # отправка по каналам
     ├── utils/
-    │   ├── init.py
     │   ├── enums.py                 # статусы/типы/периоды
     │   ├── date_calculator.py       # Логика работы с датами
-    │   ├── price_calculator.py      # Конвертация валют и периодичностей
+    │   ├── price_calculator.py      # Конвертация валют
+    │   ├── decorators.py            # Кастомные декораторы
     │   └── validators.py            # Кастомные валидаторы
     ├── docs/                      # Документация
-    │   └── diagrams/
     ├── templates/
     ├── docker/
     │   ├── docker-compose.yml
@@ -223,7 +307,7 @@ __SubFlux — Django-проект с API-first подходом.__
     │   ├── dev.txt
     │   └── prod.txt
     ├── manage.py
-    ├── .env
+    ├── .env.example
     └── README.md
 ```
 
