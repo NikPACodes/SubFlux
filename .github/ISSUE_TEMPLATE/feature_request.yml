@@ -1,0 +1,17 @@
+name: Запрос функциональности
+description: Предложить улучшение или новую идею
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    attributes:
+      label: Какую проблему это решает?
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Предлагаемое решение
+      description: Идея реализации или поведение
+    validations:
+      required: false
