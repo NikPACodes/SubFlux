@@ -1,0 +1,25 @@
+name: Сообщение об ошибке
+description: Сообщить о баге или некорректном поведении
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Описание проблемы
+      description: Что произошло и что ожидалось
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Шаги для воспроизведения
+      description: Пошагово, если возможно
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Окружение
+      description: ОС, версия Python, Django и т.п.
+    validations:
+      required: false
