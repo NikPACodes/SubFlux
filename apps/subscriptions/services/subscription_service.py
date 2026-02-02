@@ -22,7 +22,7 @@ from apps.subscriptions.services.billing_service import (recalculate_schedule_ne
     validate_billing_schedule_params,
 )
 
-from utils.enums import Status, Source
+from utils.enums import SubscriptionStatus, PriceHistorySource
 
 
 @dataclass(frozen=True)
@@ -34,7 +34,7 @@ class PriceInput:
     currency: str
     effective_from: Optional[timezone.datetime] = None
     reason: Optional[str] = None
-    source: str = Source.MANUAL
+    source: str = PriceHistorySource.MANUAL
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ class ScheduleInput:
 
 @transaction.atomic
 def create_subscription_with_defaults(*, user, title: str, description: Optional[str] = None,
-                                         provider=None, category=None, status: str = Status.ACTIVE,
+                                         provider=None, category=None, status: str = SubscriptionStatus.ACTIVE,
                                          started_at=None, ended_at=None, payment_method_label: Optional[str] = None,
                                          owner_note: Optional[str] = None, is_shared: bool = False,
                                          price: PriceInput, schedule: ScheduleInput) -> Subscription:
@@ -117,7 +117,7 @@ def create_subscription_with_defaults(*, user, title: str, description: Optional
 @transaction.atomic
 def set_subscription_price(*, subscription: Subscription, amount: Decimal, currency: str,
                            effective_from: Optional[timezone.datetime] = None, reason: Optional[str] = None,
-                           source: str = Source.MANUAL) -> PriceHistory:
+                           source: str = PriceHistorySource.MANUAL) -> PriceHistory:
     """
     Меняет текущую цену подписки:
     - обновляет Subscription.current_price_*

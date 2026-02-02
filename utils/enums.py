@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class Status(models.TextChoices):
+class SubscriptionStatus(models.TextChoices):
     """
     Статус подписки
     """
@@ -12,16 +12,25 @@ class Status(models.TextChoices):
     EXPIRED = "expired", "Expired"
 
 
-class Source(models.TextChoices):
+class VerifiedPriceSource(models.TextChoices):
     """
-    # Источник данных
+    # Источник данных (Подтвержденные цены)
     """
+    ADMIN = "admin", "Admin"
+    API = "api", "API"
+    # Интеграция
+    SYNC = "sync", "Sync"
+
+class PriceHistorySource(models.TextChoices):
+    """
+    # Источник данных (Цена)
+    """
+    # Подтвержденные цены (VerifiedPrice)
+    VERIFIED = "verified", "Verified"
     # Ручной ввод
     MANUAL = "manual", "Manual"
     # Импорт из файла
     IMPORT = "import", "Import"
-    # Интеграция
-    INTEGRATION = "integration", "Integration"
 
 
 class Platform(models.TextChoices):
@@ -58,3 +67,12 @@ class PeriodUnit(models.TextChoices):
     WEEK = "week", "Week"
     MONTH = "month", "Month"
     YEAR = "year", "Year"
+
+
+class PaymentSource(models.TextChoices):
+    # Ручной ввод
+    MANUAL = "manual", "Manual"
+    # Импорт из файла
+    IMPORT = "import", "Import"
+    # Синхронизация
+    SYNC = "sync", "Sync"

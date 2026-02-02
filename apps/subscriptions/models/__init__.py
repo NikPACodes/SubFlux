@@ -2,7 +2,8 @@ from .category import Category
 from .provider import Provider, ProviderLink
 from .subscription import Subscription
 from .billing_schedule import BillingSchedule
-from .price_history import PriceHistory
+from .price import PriceHistory, VerifiedPrice
+from .payment import Payment
 
 __all__ = [
     'Category',
@@ -10,5 +11,7 @@ __all__ = [
     'ProviderLink',
     'Subscription',
     'BillingSchedule',
+    'VerifiedPrice',
     'PriceHistory',
+    'Payment',
 ]
