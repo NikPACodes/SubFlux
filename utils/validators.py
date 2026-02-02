@@ -27,7 +27,7 @@ def validator_currency(value: str):
     if value in (None, ''):
         raise ValidationError(f'Код валюты обязателен для заполнения')
 
-    # Проверка соответствия формату ISO 3166-1 alpha-2
+    # Проверка соответствия формату ISO 4217 alpha-3
     if not _CURRENCY_RE.match(value):
         raise ValidationError(f'Код валюты не соответствует формату ISO 4217')
 
