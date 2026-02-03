@@ -2,9 +2,9 @@ from django.urls import path, include
 from  rest_framework import routers
 from .views import SubscriptionViewSet
 
-routers = routers.DefaultRouter()
-routers.register(r'subscriptions', SubscriptionViewSet, basename='subscriptions')
+router = routers.DefaultRouter()
+router.register(r'subscriptions', SubscriptionViewSet, basename='subscriptions')
 
 urlpatterns = [
-    path('', include(routers.urls)),
+    path('', include(router.urls)),
 ]

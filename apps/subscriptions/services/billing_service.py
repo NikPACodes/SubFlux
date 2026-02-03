@@ -56,7 +56,7 @@ def _next_for_week(dtime: datetime, interval: int, anchor_weekday: int) -> datet
     """
     Вычисляем следующую дату для "каждые N недель" на конкретный день недели.
     """
-    return next_week(dtime, interval, anchor_weekday)
+    return next_week(dtime, anchor_weekday, interval)
 
 
 def _next_for_month(dtime: datetime, interval: int, anchor_day: int) -> datetime:
@@ -90,7 +90,7 @@ def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetim
     Обычно это timezone.now().
     """
     sub = schedule.subscription
-    tzone = get_tzinfo(sub)
+    tzone = get_tzinfo(sub.billing_timezone)
 
     # Переводим опорный момент в локальную зону “подписки”
     local_dtime = timezone.localtime(from_dt, tzone)

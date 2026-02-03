@@ -1,5 +1,3 @@
-from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
@@ -22,7 +20,7 @@ class Payment(models.Model):
 
     amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
     currency = models.CharField(max_length=3, validators=[validator_currency])
-
+    # Время оплаты
     paid_at = models.DateTimeField(default=timezone.now)
     source = models.CharField(max_length=16, choices=PaymentSource.choices, default=PaymentSource.MANUAL)
 
@@ -41,4 +39,4 @@ class Payment(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.subscription__title} ({self.subscription__id}), {self.amount} {self.currency}, at={self.paid_at})"
+        return f"Sub_ID {self.subscription_id} -> {self.amount} {self.currency}, {self.paid_at}"

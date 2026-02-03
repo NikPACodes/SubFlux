@@ -20,8 +20,8 @@
 - [X] BillingSchedule
 - [X] Category
 - [X] Provider (Provider + ProviderLink)
-- [ ] Price (VerifiedPrice + PriceHistory)
-- [ ] Payment 
+- [X] Price (VerifiedPrice + PriceHistory)
+- [X] Payment 
 - [X] Расчёт дат списаний
 - [ ] Обновление и установка цен
 - [ ] DRF API для подписок

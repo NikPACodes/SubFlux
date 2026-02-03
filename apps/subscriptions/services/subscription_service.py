@@ -109,7 +109,7 @@ def create_subscription_with_defaults(*, user, title: str, description: Optional
                                            next_run_at=timezone.now(),
                                            is_current=True)
 
-    recalculate_schedule_next_run(sched, dtime=timezone.now())
+    recalculate_schedule_next_run(sched, from_dt=timezone.now())
     sync_subscription_next_billing(sub)
     return sub
 
