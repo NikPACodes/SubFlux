@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 @pytest.fixture()
-def user_data():
+def user_data_default():
     """
     Базовые данные тестового пользователя.
     """
@@ -15,9 +15,9 @@ def user_data():
     }
 
 @pytest.fixture()
-def user_pass():
+def user_pass_default():
     """
-    Тестовый пороль
+    Тестовый пароль
     """
     return "StrongTestPass123!"
 

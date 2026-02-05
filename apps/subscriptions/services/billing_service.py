@@ -18,31 +18,8 @@ from django.core.exceptions import ValidationError
 from apps.subscriptions.models import BillingSchedule, Subscription
 
 from utils.enums import PeriodUnit
+from utils.validators import validate_billing_schedule_params
 from utils.date_calculator import get_tzinfo, add_months, clamp_day_to_month, next_week
-
-
-def validate_billing_schedule_params(*, period_unit: str, period_interval: int, anchor_day: Optional[int],
-                                        anchor_weekday: Optional[int], grace_days: int):
-    """
-    Валидация расписания “по смыслу”.
-
-    Назначение:
-    - Проверка логических зависимостей
-        * поле anchor_day обязательно для MONTH (BillingSchedule.period_unit)
-        * поле anchor_weekday обязательно для WEEK (BillingSchedule.period_unit)
-        * для DAY/YEAR нет поля якоря
-        * проверка интервалов
-    """
-    if period_interval < 1:
-        raise ValidationError("Интервал (каждые N периодов) должен быть >= 1")
-
-    if grace_days < 0:
-        raise ValidationError("Льготный период должен быть >= 0")
-
-    if period_unit == PeriodUnit.MONTH and anchor_day is None:
-        raise ValidationError("anchor_day является обязательным для интервала (period_unit) по месяцам (MONTH)")
-    elif period_unit == PeriodUnit.WEEK and anchor_weekday is None:
-        raise ValidationError("anchor_weekday является обязательным для интервала (period_unit) по неделям (WEEK)")
 
 
 def _next_for_day(dtime: datetime, interval: int) -> datetime:

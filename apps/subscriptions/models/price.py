@@ -4,9 +4,8 @@ from django.db import models
 from django.db.models import Q, F
 from django.core.validators import MinValueValidator
 
-from . import ProviderLink
 from .subscription import Subscription
-from .provider import Provider
+from .provider import Provider, ProviderLink
 
 from utils.validators import validator_currency, validator_region
 from utils.enums import VerifiedPriceSource, PriceHistorySource, Platform, PeriodUnit
@@ -40,7 +39,8 @@ class VerifiedPrice(models.Model):
     platform = models.CharField(max_length=10, choices=Platform.choices, default=Platform.WEB, db_index=True)
     # Источник данных
     source = models.CharField(max_length=8, choices=VerifiedPriceSource.choices)
-    source_link = models.ForeignKey(ProviderLink, on_delete=models.CASCADE, related_name='verified_price')
+    source_link = models.ForeignKey(ProviderLink, on_delete=models.SET_NULL,
+                                    blank=True, null=True, related_name='verified_price')
 
     valid_from = models.DateTimeField(db_index=True)
     valid_to = models.DateTimeField(blank=True, null=True)

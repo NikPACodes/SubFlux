@@ -19,11 +19,10 @@ from django.utils import timezone
 from apps.subscriptions.models import BillingSchedule, PriceHistory, Subscription, VerifiedPrice
 from apps.subscriptions.services.billing_service import (recalculate_schedule_next_run,
                                                          sync_subscription_next_billing,
-                                                         validate_billing_schedule_params,
                                                         )
 
 from utils.enums import SubscriptionStatus, PriceHistorySource
-from utils.validators import validator_price_history_source
+from utils.validators import validator_price_history_source, validate_billing_schedule_params
 
 
 @dataclass(frozen=True)
@@ -73,7 +72,10 @@ def create_subscription_with_defaults(*, user, title: str, description: Optional
     effective_from = price.effective_from or timezone.now()
 
     # Проверка корректности режимов manual/verified
-    validator_price_history_source(price.source, price.verified_price, price.amount, price.currency)
+    validator_price_history_source(source=price.source,
+                                   verified_price=price.verified_price,
+                                   amount=price.amount,
+                                   currency=price.currency)
 
     if price.source == PriceHistorySource.VERIFIED:
         amount = price.verified_price.amount
@@ -150,7 +152,10 @@ def set_subscription_price(*, subscription: Subscription, verified_price: Option
     Это "правильная" точка входа для изменения цены в домене.
     """
     # Проверка корректности режимов manual/verified
-    validator_price_history_source(source, verified_price, amount, currency)
+    validator_price_history_source(source=source,
+                                   verified_price=verified_price,
+                                   amount=amount,
+                                   currency=currency)
 
     # Момент вступления цены в силу
     now = timezone.now()
