@@ -29,8 +29,6 @@ class PriceHistorySource(models.TextChoices):
     VERIFIED = "verified", "Verified"
     # Ручной ввод
     MANUAL = "manual", "Manual"
-    # Импорт из файла
-    IMPORT = "import", "Import"
 
 
 class Platform(models.TextChoices):

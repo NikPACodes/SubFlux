@@ -16,13 +16,14 @@ from typing import Optional
 from django.db import transaction
 from django.utils import timezone
 
-from apps.subscriptions.models import BillingSchedule, PriceHistory, Subscription
+from apps.subscriptions.models import BillingSchedule, PriceHistory, Subscription, VerifiedPrice
 from apps.subscriptions.services.billing_service import (recalculate_schedule_next_run,
-    sync_subscription_next_billing,
-    validate_billing_schedule_params,
-)
+                                                         sync_subscription_next_billing,
+                                                         validate_billing_schedule_params,
+                                                        )
 
 from utils.enums import SubscriptionStatus, PriceHistorySource
+from utils.validators import validator_price_history_source
 
 
 @dataclass(frozen=True)
@@ -30,8 +31,9 @@ class PriceInput:
     """
     DTO для передачи цены
     """
-    amount: Decimal
-    currency: str
+    verified_price: Optional[VerifiedPrice] = None
+    amount: Optional[Decimal] = None
+    currency: Optional[str] = None
     effective_from: Optional[timezone.datetime] = None
     reason: Optional[str] = None
     source: str = PriceHistorySource.MANUAL
@@ -70,6 +72,16 @@ def create_subscription_with_defaults(*, user, title: str, description: Optional
     # Момент вступления цены в силу
     effective_from = price.effective_from or timezone.now()
 
+    # Проверка корректности режимов manual/verified
+    validator_price_history_source(price.source, price.verified_price, price.amount, price.currency)
+
+    if price.source == PriceHistorySource.VERIFIED:
+        amount = price.verified_price.amount
+        current = price.verified_price.currency
+    else: # Manual
+        amount = price.amount
+        current = price.currency
+
     sub = Subscription.objects.create(user=user,
                                       provider=provider,
                                       category=category,
@@ -81,16 +93,24 @@ def create_subscription_with_defaults(*, user, title: str, description: Optional
                                       payment_method_label=payment_method_label,
                                       owner_note=owner_note,
                                       is_shared=is_shared,
-                                      current_price_amount=price.amount,
-                                      current_price_currency=price.currency,
+                                      current_price_amount=amount,
+                                      current_price_currency=current,
                                       billing_timezone=schedule.billing_timezone)
 
-    PriceHistory.objects.create(subscription=sub,
-                                amount=price.amount,
-                                currency=price.currency,
-                                effective_from=effective_from,
-                                change_reason=price.reason,
-                                source=price.source)
+
+    if price.source == PriceHistorySource.VERIFIED:
+        PriceHistory.objects.create(subscription=sub,
+                                    verified_price=price.verified_price,
+                                    effective_from=effective_from,
+                                    change_reason=price.reason,
+                                    source=price.source)
+    elif price.source == PriceHistorySource.MANUAL:
+        PriceHistory.objects.create(subscription=sub,
+                                    amount=price.amount,
+                                    currency=price.currency,
+                                    effective_from=effective_from,
+                                    change_reason=price.reason,
+                                    source=price.source)
 
     validate_billing_schedule_params(period_unit=schedule.period_unit,
                                      period_interval=schedule.period_interval,
@@ -115,7 +135,8 @@ def create_subscription_with_defaults(*, user, title: str, description: Optional
 
 
 @transaction.atomic
-def set_subscription_price(*, subscription: Subscription, amount: Decimal, currency: str,
+def set_subscription_price(*, subscription: Subscription, verified_price: Optional[VerifiedPrice] = None,
+                           amount: Optional[Decimal] = None, currency: Optional[str] = None,
                            effective_from: Optional[timezone.datetime] = None, reason: Optional[str] = None,
                            source: str = PriceHistorySource.MANUAL) -> PriceHistory:
     """
@@ -128,11 +149,22 @@ def set_subscription_price(*, subscription: Subscription, amount: Decimal, curre
 
     Это "правильная" точка входа для изменения цены в домене.
     """
+    # Проверка корректности режимов manual/verified
+    validator_price_history_source(source, verified_price, amount, currency)
+
     # Момент вступления цены в силу
-    effective_from = effective_from or timezone.now()
+    now = timezone.now()
+    if effective_from and effective_from > now:
+        raise ValueError("Значение effective_from в будущем не поддерживается.")
+    elif not effective_from:
+        effective_from = now
+
+    # Блочим subscription чтобы не получить конкурентного обновления
+    sub_lock = Subscription.objects.select_for_update().get(pk=subscription.pk)
 
     # Текущая активная цена (если есть)
-    prev = PriceHistory.objects.select_for_update().filter(subscription=subscription, effective_to__isnull=True).order_by("-effective_from").first()
+    # ! Может существовать только одна активная PriceHistory к конкретной Subscription
+    prev = PriceHistory.objects.select_for_update().filter(subscription=subscription, effective_to__isnull=True).first()
 
     if prev and prev.effective_from < effective_from:
         # Закрываем предыдущую “текущую” запись
@@ -141,15 +173,25 @@ def set_subscription_price(*, subscription: Subscription, amount: Decimal, curre
     elif prev and prev.effective_from >= effective_from:
         raise ValueError("Значение effective_from должно быть больше текущей активной цены effective_from.")
 
-    entry = PriceHistory.objects.create(subscription=subscription,
-                                        amount=amount,
-                                        currency=currency,
-                                        effective_from=effective_from,
-                                        change_reason=reason,
-                                        source=source)
+    if source == PriceHistorySource.VERIFIED:
+        entry = PriceHistory.objects.create(subscription=subscription,
+                                            verified_price=verified_price,
+                                            effective_from=effective_from,
+                                            change_reason=reason,
+                                            source=source)
+        sub_lock.current_price_amount = verified_price.amount
+        sub_lock.current_price_currency = verified_price.currency
 
-    subscription.current_price_amount = amount
-    subscription.current_price_currency = currency
-    subscription.save(update_fields=["current_price_amount", "current_price_currency", "update_at"])
+    else: # Manual
+        entry = PriceHistory.objects.create(subscription=subscription,
+                                            amount=amount,
+                                            currency=currency,
+                                            effective_from=effective_from,
+                                            change_reason=reason,
+                                            source=source)
+        sub_lock.current_price_amount = amount
+        sub_lock.current_price_currency = currency
+
+    sub_lock.save(update_fields=["current_price_amount", "current_price_currency", "update_at"])
 
     return entry

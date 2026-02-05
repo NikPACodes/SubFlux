@@ -90,7 +90,7 @@ class PriceHistory(models.Model):
 
     subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name="price_history")
 
-    verified_price = models.ForeignKey(VerifiedPrice,on_delete=models.SET_NULL,
+    verified_price = models.ForeignKey(VerifiedPrice,on_delete=models.PROTECT,
                                        blank=True, null=True, related_name="price_history")
 
     amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True,
