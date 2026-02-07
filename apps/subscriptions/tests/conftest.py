@@ -2,7 +2,9 @@ import pytest
 from decimal import Decimal
 from typing import Optional
 from django.utils import timezone
-from apps.subscriptions.models import Provider, VerifiedPrice, Category
+import datetime
+from apps.subscriptions.models import Provider, VerifiedPrice, Category, Subscription
+
 
 #--------- Базовые данные для моделей ---------
 @pytest.fixture()
@@ -104,3 +106,21 @@ def category_factory(db):
     def _create_category(name: str, slug: str, sort_order: int = 0) -> Category:
         return Category.objects.create(name=name, slug=slug,sort_order=sort_order)
     return _create_category
+
+
+@pytest.fixture()
+def subscription_factory(db):
+    """
+    Фабрика создания подписок для тестов:
+    SubscriptionX = subscription_factory(user=..., title="...", ...)
+    """
+    def _create_subscription(user,  title: str, description: str=None, status: str="active",
+                             provider: Provider=None, category: Category=None,
+                             started_at: datetime.date=None, ended_at: datetime.date=None,
+                             payment_method_label: str=None, owner_note: str=None,
+                             is_shared: bool=False, billing_timezone: str=None) -> Subscription:
+        return Subscription.objects.create(user=user, title=title, description=description, status=status,
+                                           provider=provider, category=category, started_at=started_at, ended_at=ended_at,
+                                           payment_method_label=payment_method_label, owner_note=owner_note,
+                                           is_shared=is_shared, billing_timezone=billing_timezone)
+    return _create_subscription

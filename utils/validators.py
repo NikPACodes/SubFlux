@@ -66,20 +66,20 @@ def validator_price_history_source(source: str, verified_price = None,
     """
     if source == PriceHistorySource.VERIFIED:
         if not verified_price:
-            raise ValueError("Verified: verified_price не может отсутствовать")
+            raise ValidationError("Verified: verified_price не может отсутствовать")
         if amount is not None and currency is not None:
-            raise ValueError("Verified: amount и currency должны быть пустыми")
+            raise ValidationError("Verified: amount и currency должны быть пустыми")
     elif source == PriceHistorySource.MANUAL:
         if amount is None:
-            raise ValueError("Manual: amount обязательное к заполнению")
+            raise ValidationError("Manual: amount обязательное к заполнению")
         if amount <= 0:
-            raise ValueError("Цена (amount) не может быть отрицательной.")
+            raise ValidationError("Цена (amount) не может быть отрицательной.")
         if not currency:
-            raise ValueError("Manual: currency обязательное к заполнению")
+            raise ValidationError("Manual: currency обязательное к заполнению")
         if verified_price:
-            raise ValueError("Manual: verified_price должна быть пустой")
+            raise ValidationError("Manual: verified_price должна быть пустой")
     else:
-        raise ValueError("Некорректный источник цены (price.source). Поддерживаются verified/manual режимы")
+        raise ValidationError("Некорректный источник цены (price.source). Поддерживаются verified/manual режимы")
 
 
 def validate_billing_schedule_params(*, period_unit: str, period_interval: int, anchor_day: Optional[int],

@@ -9,7 +9,6 @@ Billing service
 from __future__ import annotations
 
 from datetime import timedelta, datetime
-from typing import Optional
 
 from django.db import transaction
 from django.utils import timezone
@@ -97,7 +96,7 @@ def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetim
         raise ValidationError(f"Период не найден: {schedule.period_unit}")
 
     # Возвращаем в UTC (для хранения)
-    next_utc = next_dtime.astimezone(timezone.utc)
+    next_utc = next_dtime.astimezone(timezone.UTC)
     schedule.next_run_at = next_utc
     schedule.save(update_fields=["next_run_at", "update_at"])
     return schedule

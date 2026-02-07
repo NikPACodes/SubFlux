@@ -51,6 +51,7 @@ class VerifiedPrice(models.Model):
     class Meta:
         db_table = "verified_prices"
         constraints = [
+            # Уникальный ключ VerifiedPrice
             models.UniqueConstraint(
                 fields=["provider", "plan_name", "platform", "region", "currency", "period_unit", "period_interval", "valid_from"],
                 name="verified_price_version",
@@ -122,8 +123,8 @@ class PriceHistory(models.Model):
             # Дата начала (effective_from) не может быть позже Дата окончания (effective_to)
             models.CheckConstraint(condition=Q(effective_to__isnull=True) | Q(effective_to__gt=F("effective_from")),
                                    name="price_history_effective_to_gt_from"),
-            # Для режима Verified поля (amount, currency) -> пустые
-            # Для режима Manual поля (amount, currency) -> обязательные
+            # Для режима Verified поле verified_price -> обязательное, поля(amount, currency) -> пустые
+            # Для режима Manual поля(amount, currency) -> обязательные, поле verified_price -> пустое
             models.CheckConstraint(condition=((Q(verified_price__isnull=False) & Q(amount__isnull=True) & Q(currency__isnull=True)) | # Verified
                                               (Q(verified_price__isnull=True) & Q(amount__isnull=False) & Q(currency__isnull=False)) # Manual
                                               ),

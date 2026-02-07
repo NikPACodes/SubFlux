@@ -33,6 +33,7 @@ class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = "payments"
         ordering = ["-paid_at", "-created_at"]
         indexes = [
             models.Index(fields=["subscription", "paid_at"]),
