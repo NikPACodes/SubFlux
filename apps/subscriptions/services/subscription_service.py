@@ -18,8 +18,7 @@ from django.utils import timezone
 
 from apps.subscriptions.models import BillingSchedule, PriceHistory, Subscription, VerifiedPrice
 from apps.subscriptions.services.billing_service import (recalculate_schedule_next_run,
-                                                         sync_subscription_next_billing,
-                                                        )
+                                                         sync_subscription_next_billing)
 
 from utils.enums import SubscriptionStatus, PriceHistorySource
 from utils.validators import validator_price_history_source, validate_billing_schedule_params
@@ -169,34 +168,34 @@ def set_subscription_price(*, subscription: Subscription, verified_price: Option
 
     # Текущая активная цена (если есть)
     # ! Может существовать только одна активная PriceHistory к конкретной Subscription
-    prev = PriceHistory.objects.select_for_update().filter(subscription=subscription, effective_to__isnull=True).first()
+    prev_price = PriceHistory.objects.select_for_update().filter(subscription=subscription, effective_to__isnull=True).first()
 
-    if prev and prev.effective_from < effective_from:
+    if prev_price and prev_price.effective_from < effective_from:
         # Закрываем предыдущую “текущую” запись
-        prev.effective_to = effective_from
-        prev.save(update_fields=["effective_to"])
-    elif prev and prev.effective_from >= effective_from:
+        prev_price.effective_to = effective_from
+        prev_price.save(update_fields=["effective_to"])
+    elif prev_price and prev_price.effective_from >= effective_from:
         raise ValueError("Значение effective_from должно быть больше текущей активной цены effective_from.")
 
     if source == PriceHistorySource.VERIFIED:
-        entry = PriceHistory.objects.create(subscription=subscription,
-                                            verified_price=verified_price,
-                                            effective_from=effective_from,
-                                            change_reason=reason,
-                                            source=source)
+        new_price = PriceHistory.objects.create(subscription=subscription,
+                                                verified_price=verified_price,
+                                                effective_from=effective_from,
+                                                change_reason=reason,
+                                                source=source)
         sub_lock.current_price_amount = verified_price.amount
         sub_lock.current_price_currency = verified_price.currency
 
     else: # Manual
-        entry = PriceHistory.objects.create(subscription=subscription,
-                                            amount=amount,
-                                            currency=currency,
-                                            effective_from=effective_from,
-                                            change_reason=reason,
-                                            source=source)
+        new_price = PriceHistory.objects.create(subscription=subscription,
+                                                amount=amount,
+                                                currency=currency,
+                                                effective_from=effective_from,
+                                                change_reason=reason,
+                                                source=source)
         sub_lock.current_price_amount = amount
         sub_lock.current_price_currency = currency
 
     sub_lock.save(update_fields=["current_price_amount", "current_price_currency", "update_at"])
 
-    return entry
+    return new_price

@@ -54,7 +54,8 @@ class VerifiedPrice(models.Model):
             # Уникальный ключ VerifiedPrice
             models.UniqueConstraint(
                 fields=["provider", "plan_name", "platform", "region", "currency", "period_unit", "period_interval", "valid_from"],
-                name="verified_price_version",
+                condition=Q(valid_to__isnull=True),
+                name="uniq_active_verified_price",
             ),
         ]
         indexes = [
