@@ -76,4 +76,4 @@ class ProviderLink(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.provider} [{self.region}/{self.platform}] {self.link_type}"
+        return f"Provider {self.provider} [{self.region}/{self.platform}] {self.link_type}"

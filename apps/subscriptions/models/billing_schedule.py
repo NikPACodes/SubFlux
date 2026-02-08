@@ -57,7 +57,11 @@ class BillingSchedule(models.Model):
             # Интервал не может быть меньше 1
             models.CheckConstraint(condition=models.Q(period_interval__gte=1),
                                    name="billing_schedule_interval_gte_1"),
+            # 1 Subscription -> 1 актуальное BillingSchedule
+            models.UniqueConstraint(fields=["subscription"],
+                                    condition=models.Q(is_current=True),
+                                    name="uniq_active_subscription_schedule")
         ]
 
     def __str__(self):
-        return f"{self.subscription__id}: {self.period_interval} {self.period_unit}"
+        return f"Sub_ID {self.subscription_id} -> {self.period_interval} {self.period_unit}"

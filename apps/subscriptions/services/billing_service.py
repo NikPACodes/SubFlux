@@ -9,7 +9,6 @@ Billing service
 from __future__ import annotations
 
 from datetime import timedelta, datetime
-from typing import Optional
 
 from django.db import transaction
 from django.utils import timezone
@@ -18,31 +17,8 @@ from django.core.exceptions import ValidationError
 from apps.subscriptions.models import BillingSchedule, Subscription
 
 from utils.enums import PeriodUnit
+from utils.validators import validate_billing_schedule_params
 from utils.date_calculator import get_tzinfo, add_months, clamp_day_to_month, next_week
-
-
-def validate_billing_schedule_params(*, period_unit: str, period_interval: int, anchor_day: Optional[int],
-                                        anchor_weekday: Optional[int], grace_days: int):
-    """
-    Валидация расписания “по смыслу”.
-
-    Назначение:
-    - Проверка логических зависимостей
-        * поле anchor_day обязательно для MONTH (BillingSchedule.period_unit)
-        * поле anchor_weekday обязательно для WEEK (BillingSchedule.period_unit)
-        * для DAY/YEAR нет поля якоря
-        * проверка интервалов
-    """
-    if period_interval < 1:
-        raise ValidationError("Интервал (каждые N периодов) должен быть >= 1")
-
-    if grace_days < 0:
-        raise ValidationError("Льготный период должен быть >= 0")
-
-    if period_unit == PeriodUnit.MONTH and anchor_day is None:
-        raise ValidationError("anchor_day является обязательным для интервала (period_unit) по месяцам (MONTH)")
-    elif period_unit == PeriodUnit.WEEK and anchor_weekday is None:
-        raise ValidationError("anchor_weekday является обязательным для интервала (period_unit) по неделям (WEEK)")
 
 
 def _next_for_day(dtime: datetime, interval: int) -> datetime:
@@ -56,7 +32,7 @@ def _next_for_week(dtime: datetime, interval: int, anchor_weekday: int) -> datet
     """
     Вычисляем следующую дату для "каждые N недель" на конкретный день недели.
     """
-    return next_week(dtime, interval, anchor_weekday)
+    return next_week(dtime, anchor_weekday, interval)
 
 
 def _next_for_month(dtime: datetime, interval: int, anchor_day: int) -> datetime:
@@ -90,7 +66,7 @@ def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetim
     Обычно это timezone.now().
     """
     sub = schedule.subscription
-    tzone = get_tzinfo(sub)
+    tzone = get_tzinfo(sub.billing_timezone)
 
     # Переводим опорный момент в локальную зону “подписки”
     local_dtime = timezone.localtime(from_dt, tzone)
@@ -120,7 +96,7 @@ def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetim
         raise ValidationError(f"Период не найден: {schedule.period_unit}")
 
     # Возвращаем в UTC (для хранения)
-    next_utc = next_dtime.astimezone(timezone.utc)
+    next_utc = next_dtime.astimezone(timezone.UTC)
     schedule.next_run_at = next_utc
     schedule.save(update_fields=["next_run_at", "update_at"])
     return schedule
