@@ -67,7 +67,7 @@ def validator_price_history_source(source: str, verified_price = None,
     if source == PriceHistorySource.VERIFIED:
         if not verified_price:
             raise ValidationError("Verified: verified_price не может отсутствовать")
-        if amount is not None and currency is not None:
+        if amount is not None or currency is not None:
             raise ValidationError("Verified: amount и currency должны быть пустыми")
     elif source == PriceHistorySource.MANUAL:
         if amount is None:

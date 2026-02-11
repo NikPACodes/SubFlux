@@ -18,17 +18,43 @@ def test_create_verified_price(verified_price_data_default, verified_price_facto
 
 
 @pytest.mark.django_db
-def test_uniq_verified_price(verified_price_data_default, verified_price_factory,
-                               provider_data_default, provider_factory):
+def test_uniq_verified_price( verified_price_factory,
+                              provider_data_default, provider_factory):
     """
     Проверка уникального ключа VerifiedPrice
+    - 2 VerifiedPrice с одним ключом не могут быть активными (valid_to)
     """
     test_p = provider_factory(name=provider_data_default["name"], slug=provider_data_default["slug"])
     verified_price_factory(provider=test_p, plan_name="Тестовый тариф", platform="web", region="GLOBAL",
-                           amount=100, currency="USD", period_unit="week", period_interval=2, valid_from='2001-01-01')
+                           amount=100, currency="USD", period_unit="week", period_interval=2)
     with pytest.raises(IntegrityError):
         verified_price_factory(provider=test_p, plan_name="Тестовый тариф", platform="web", region="GLOBAL",
-                               amount=100, currency="USD", period_unit="week", period_interval=2, valid_from='2001-01-01')
+                                   amount=100, currency="USD", period_unit="week", period_interval=2)
+
+
+@pytest.mark.django_db
+def test_verified_price_amount_nonnegative(verified_price_data_default, verified_price_factory,
+                                           provider_data_default, provider_factory):
+    """
+    amount не может быть меньше 0
+    """
+    test_p = provider_factory(name=provider_data_default["name"], slug=provider_data_default["slug"])
+
+    with pytest.raises(IntegrityError):
+        verified_price_factory(provider=test_p, plan_name=verified_price_data_default["plan_name"], amount=-10)
+
+
+@pytest.mark.django_db
+def test_verified_price_valid_to_gt_from(verified_price_data_default, verified_price_factory,
+                                         provider_data_default, provider_factory):
+    """
+    valid_from не может быть позже valid_to
+    """
+    test_p = provider_factory(name=provider_data_default["name"], slug=provider_data_default["slug"])
+    with pytest.raises(IntegrityError):
+        verified_price_factory(provider=test_p, plan_name=verified_price_data_default["plan_name"], amount=100, currency="USD",
+                               valid_from='2001-02-01', valid_to='2001-01-01',)
+
 
 
 #---------- PriceHistory ----------
