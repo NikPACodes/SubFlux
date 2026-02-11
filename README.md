@@ -17,8 +17,9 @@ SubFlux — это сервис для управления цифровыми �
 - архитектурные решения зафиксированы
 - ведется поэтапная реализация
 
-👉 План разработки ── [DEVELOPMENT](./docs/DEVELOPMENT.md)  
+👉 План разработки ── [ROADMAP](./docs/ROADMAP.md)  
 👉 Архитектура и схемы ── [ARCHITECTURE](./docs/ARCHITECTURE.md)
+👉 Развертывание проекта ── [DEVELOPMENT](./docs/DEVELOPMENT.md)
 
 ---
 
@@ -90,6 +91,9 @@ __SubFlux__ решает эту проблему, помогая избавит�
 - Мониторинг: Flower для Celery
 - Уведомления: Telegram Bot API + Email
 
+️⚠️ Проект реализован/тестировался на __Django 6.0__ и требует __Python 3.12+__ 
+(на более ранних версиях Django/Python __НЕ ТЕСТИРОВАЛСЯ__)
+
 ### Структура приложения (общая):
 ```
     subflux/
@@ -133,8 +137,8 @@ __SubFlux__ решает эту проблему, помогая избавит�
 Описание структуры проекта и ключевых решений — [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 
 ### 🛠 Разработка 
-Этапы реализации проекта — [DEVELOPMENT.md](./docs/DEVELOPMENT.md)
-
+Roadmap реализации проекта — [ROADMAP.md](./docs/ROADMAP.md)  
+Развертывание проекта ── [DEVELOPMENT](./docs/DEVELOPMENT.md)
 ---
 
 __SubFlux__ — это не просто трекер подписок, а полноценная система управления регулярными расходами, 

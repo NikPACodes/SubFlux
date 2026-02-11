@@ -51,9 +51,15 @@ class VerifiedPrice(models.Model):
     class Meta:
         db_table = "verified_prices"
         constraints = [
+            # Цена не может быть отрицательной
+            models.CheckConstraint(condition=Q(amount__gte=0),
+                                   name="verified_price_amount_nonnegative", ),
+            # Дата начала (valid_from) не может быть позже Дата окончания (valid_to)
+            models.CheckConstraint(condition=Q(valid_to__isnull=True) | Q(valid_to__gt=F("valid_from")),
+                                   name="verified_price_valid_to_gt_from"),
             # Уникальный ключ VerifiedPrice
             models.UniqueConstraint(
-                fields=["provider", "plan_name", "platform", "region", "currency", "period_unit", "period_interval", "valid_from"],
+                fields=["provider", "plan_name", "platform", "region", "currency", "period_unit", "period_interval"],
                 condition=Q(valid_to__isnull=True),
                 name="uniq_active_verified_price",
             ),
