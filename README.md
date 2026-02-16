@@ -18,7 +18,7 @@ SubFlux — это сервис для управления цифровыми �
 - ведется поэтапная реализация
 
 👉 План разработки ── [ROADMAP](./docs/ROADMAP.md)  
-👉 Архитектура и схемы ── [ARCHITECTURE](./docs/ARCHITECTURE.md)
+👉 Архитектура и схемы ── [ARCHITECTURE](./docs/ARCHITECTURE.md)  
 👉 Развертывание проекта ── [DEVELOPMENT](./docs/DEVELOPMENT.md)
 
 ---
@@ -139,6 +139,7 @@ __SubFlux__ решает эту проблему, помогая избавит�
 ### 🛠 Разработка 
 Roadmap реализации проекта — [ROADMAP.md](./docs/ROADMAP.md)  
 Развертывание проекта ── [DEVELOPMENT](./docs/DEVELOPMENT.md)
+
 ---
 
 __SubFlux__ — это не просто трекер подписок, а полноценная система управления регулярными расходами, 
