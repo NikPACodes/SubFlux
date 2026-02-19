@@ -125,19 +125,19 @@ __SubFlux__ решает эту проблему, помогая избавит�
 Условия использования и распространения проекта — [LICENSE](./LICENSE)
 
 ### 🤝 Вклад в проект
-Как сообщать об ошибках, предлагать улучшения и вносить изменения — [CONTRIBUTING.md](./CONTRIBUTING.md)
+Как сообщать об ошибках, предлагать улучшения и вносить изменения — [CONTRIBUTING](./CONTRIBUTING.md)
 
 ### 🔐 Безопасность 
-Как корректно сообщать об уязвимостях — [SECURITY.md](./SECURITY.md)
+Как корректно сообщать об уязвимостях — [SECURITY](./SECURITY.md)
 
 ### 📜 Правила поведения
-Правила общения в проекте — [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+Правила общения в проекте — [CODE_OF_CONDUCT](./CODE_OF_CONDUCT.md)
 
 ### 🏗️ Архитектура 
-Описание структуры проекта и ключевых решений — [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+Описание структуры проекта и ключевых решений — [ARCHITECTURE](./docs/ARCHITECTURE.md)
 
 ### 🛠 Разработка 
-Roadmap реализации проекта — [ROADMAP.md](./docs/ROADMAP.md)  
+Roadmap реализации проекта — [ROADMAP](./docs/ROADMAP.md)  
 Развертывание проекта ── [DEVELOPMENT](./docs/DEVELOPMENT.md)
 
 ---

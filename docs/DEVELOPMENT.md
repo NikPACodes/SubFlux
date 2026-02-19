@@ -137,5 +137,5 @@ python manage.py migrate
 
 ## Дополнительная документация
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — описание архитектуры проекта  
-- [ROADMAP.md](./ROADMAP.md) — текущее состояние проекта и дальнейшие этапы развития
+- [ARCHITECTURE](./ARCHITECTURE.md) — описание архитектуры проекта  
+- [ROADMAP](./ROADMAP.md) — текущее состояние проекта и дальнейшие этапы развития
