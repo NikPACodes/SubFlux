@@ -28,7 +28,12 @@ jobs:
     env:
       PYTHONUNBUFFERED: "1"
       DJANGO_SETTINGS_MODULE: config.settings
-      DATABASE_URL: postgresql://subflux:subflux@127.0.0.1:5432/subflux_test
+      
+      POSTGRES_NAME: subflux_test
+      POSTGRES_USER: subflux
+      POSTGRES_PASSWORD: subflux
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
 
     steps:
       - name: Checkout
