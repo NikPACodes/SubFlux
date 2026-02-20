@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: subflux-postgres-dev
+    environment:
+      POSTGRES_DB: subflux_bd
+      POSTGRES_USER: subflux
+      POSTGRES_PASSWORD: subflux
+    ports:
+      - 5432:5432
+    volumes:
+      - subflux_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  subflux_pg_data:
