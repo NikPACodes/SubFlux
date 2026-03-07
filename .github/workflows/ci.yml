@@ -27,7 +27,7 @@ jobs:
 
     env:
       PYTHONUNBUFFERED: "1"
-      DJANGO_SETTINGS_MODULE: config.settings
+      DJANGO_SETTINGS_MODULE: config.settings.test
       
       POSTGRES_NAME: subflux_test
       POSTGRES_USER: subflux
