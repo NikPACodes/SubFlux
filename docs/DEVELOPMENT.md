@@ -17,6 +17,7 @@
   - [Настройка переменных окружения](#настройка-переменных-окружения)
     - [1. Создание .env файла](#1-создание-env-файла)
     - [2. Минимально необходимые переменные](#2-минимально-необходимые-переменные)
+    - [Примечание по полям DJANGO_SETTINGS_MODULE и DJANGO_ALLOWED_HOSTS](#примечание-по-полям-django_settings_module-и-django_allowed_hosts)
     - [Опциональные переменные](#опциональные-переменные)
   - [Работа с базой данных](#работа-с-базой-данных)
     - [1. Использование установленной PostgreSQL](#1-использование-установленной-postgresql)
@@ -31,11 +32,14 @@
 
 ---
 
+
 ## Требования к окружению
 - __Python 3.12+__  
   Требуется для __Django 6.0+__. Версии ниже 3.12 не поддерживаются.
+- __Django 6.0+__
 - __PostgreSQL 14+__ или (__Docker__)
 - __Git__
+- __Pytest__
 - (опционально) __Redis__  
   Используется для Celery, фоновых задач и кэширования.
 - (опционально) __Docker__ + __Docker Compose__
@@ -46,6 +50,7 @@
 ```
 
 ---
+
 
 ## Локальная установка
 
@@ -72,12 +77,13 @@ pip install -r requirements.txt
 
 ### 1. Создание .env файла
 ```
-cp .env.example .env
+cp .env.example .env.dev
+cp .env.example .env.test
 ```
 
 ### 2. Минимально необходимые переменные
 ```
-SECRET_KEY = '********'
+DJANGO_SECRET_KEY = '********'
 POSTGRES_NAME     = '********'
 POSTGRES_USER     = '********'
 POSTGRES_PASSWORD = '********'
@@ -85,13 +91,33 @@ POSTGRES_HOST     = '********'
 POSTGRES_PORT     = '********'
 ```
 
+### Примечание по полям `DJANGO_SETTINGS_MODULE` и `DJANGO_ALLOWED_HOSTS`
+Поля `DJANGO_SETTINGS_MODULE` и `DJANGO_ALLOWED_HOSTS` не являются обязательными для Dev и Test  
+- __Dev__
+  - `DJANGO_SETTINGS_MODULE` настроено по умолчанию в `manage.py`
+  - `DJANGO_ALLOWED_HOSTS` прописаны по умолчанию в `settings/dev.py`
+- __Test__
+  - `DJANGO_SETTINGS_MODULE` настрайвается в файле `pytest.ini` (т.к. для тестирования используется pytest)
+  - `DJANGO_ALLOWED_HOSTS` прописаны по умолчанию в `settings/test.py`
+- __Stage / Prod__
+  - ⚠️ Поля `DJANGO_SETTINGS_MODULE` и `DJANGO_ALLOWED_HOSTS` являются __ОБЯЗАТЕЛЬНЫМИ__ к заполнению
+```
+DJANGO_SETTINGS_MODULE = '********'
+DJANGO_ALLOWED_HOSTS   = '********'
+```
+
 ### Опциональные переменные
 ```
+DJANGO_SETTINGS_MODULE = '********'
+DJANGO_ALLOWED_HOSTS   = '********'
+
 REDIS_URL             = '********'
 CELERY_BROKER_URL     = '********'
 CELERY_RESULT_BACKEND = '********'
 ```
+
 ---
+
 
 ## Работа с базой данных
 
@@ -144,7 +170,8 @@ python manage.py createsuperuser
 
 ---
 
-## Запуск тестов
+
+### Запуск тестов
 Полный прогон тестов:
 ```
 pytest
@@ -159,6 +186,7 @@ ___CI (GitHub Actions)___ _автоматически запускает тес�
 
 ---
 
+
 ## Запуск проекта
 ```
 python manage.py runserver
@@ -167,6 +195,7 @@ __Сервер будет доступен по адресу:__
 `http://127.0.0.1:8000/`
 
 ---
+
 
 ## Работа с миграциями
 - Миграции должны быть зафиксированы в репозитории.
@@ -196,6 +225,7 @@ _CI должен быть зелёным перед merge._
 
 ---
 
+
 ## Принципы разработки
 
 - Бизнес-логика размещается в service layer, а не в serializers или views.
@@ -207,6 +237,7 @@ _CI должен быть зелёным перед merge._
 - Не допускается прямое изменение данных, минуя доменные сервисы.
 
 ---
+
 
 ## Частые проблемы
 
