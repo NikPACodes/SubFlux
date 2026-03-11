@@ -34,6 +34,8 @@ class Payment(models.Model):
 
     class Meta:
         db_table = "payments"
+        verbose_name = 'Платеж'
+        verbose_name_plural = 'Платежи'
         ordering = ["-paid_at", "-created_at"]
         indexes = [
             models.Index(fields=["subscription", "paid_at"]),

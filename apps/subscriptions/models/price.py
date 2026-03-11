@@ -50,6 +50,8 @@ class VerifiedPrice(models.Model):
 
     class Meta:
         db_table = "verified_prices"
+        verbose_name = 'Verified цена'
+        verbose_name_plural = 'Verified цены'
         constraints = [
             # Цена не может быть отрицательной
             models.CheckConstraint(condition=Q(amount__gte=0),
@@ -119,6 +121,8 @@ class PriceHistory(models.Model):
 
     class Meta:
         db_table = "price_history"
+        verbose_name = 'История цены'
+        verbose_name_plural = 'История цен'
         indexes = [
             # Быстрое получение последней цены по подписке
             models.Index(fields=["subscription", "-effective_from"]),

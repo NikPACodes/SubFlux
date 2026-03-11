@@ -28,6 +28,8 @@ class Provider(models.Model):
 
     class Meta:
         db_table = 'providers'
+        verbose_name = 'Провайдер'
+        verbose_name_plural = 'Провайдеры'
         indexes = [
             #Индекс для ускорения поиска по именам активных сервисов
             models.Index(fields=["is_active", "name"]),
@@ -65,6 +67,8 @@ class ProviderLink(models.Model):
 
     class Meta:
         db_table = "provider_links"
+        verbose_name = 'Ссылка провайдера'
+        verbose_name_plural = 'Ссылки провайдера'
         indexes = [
             # Индекс для ускорения поиска по региону/платформе/типу
             models.Index(fields=["provider", "region", "platform", "link_type"]),
