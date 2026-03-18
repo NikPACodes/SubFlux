@@ -48,14 +48,14 @@ class ScheduleInput:
     anchor_weekday: Optional[int] = None
     trial_ends_at: Optional[timezone.datetime] = None
     grace_days: int = 0
-    billing_timezone: Optional[str] = None
 
 
 @transaction.atomic
 def create_subscription_with_defaults(*, user, title: str, description: Optional[str] = None,
                                          provider=None, category=None, status: str = SubscriptionStatus.ACTIVE,
-                                         started_at=None, ended_at=None, payment_method_label: Optional[str] = None,
-                                         owner_note: Optional[str] = None, is_shared: bool = False,
+                                         started_at=None, ended_at=None, billing_timezone: Optional[str] = None,
+                                         payment_method_label: Optional[str] = None, owner_note: Optional[str] = None,
+                                         is_shared: bool = False,
                                          price: PriceInput, schedule: ScheduleInput) -> Subscription:
     """
     Создание подписки со всеми связанными сущностями:
@@ -96,7 +96,7 @@ def create_subscription_with_defaults(*, user, title: str, description: Optional
                                       is_shared=is_shared,
                                       current_price_amount=amount,
                                       current_price_currency=current,
-                                      billing_timezone=schedule.billing_timezone)
+                                      billing_timezone=billing_timezone)
 
 
     if price.source == PriceHistorySource.VERIFIED:

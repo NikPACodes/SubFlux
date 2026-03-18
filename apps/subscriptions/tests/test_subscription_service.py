@@ -41,8 +41,7 @@ def test_service_create_subscription_manual_full(subscription_data_default,
 
     test_schedule = ScheduleInput(period_unit="week",
                                   period_interval=1,
-                                  anchor_weekday=1,
-                                  billing_timezone="Europe/Moscow")
+                                  anchor_weekday=1)
 
     test_service_subscription_manual = create_subscription_with_defaults(user=test_u,
                                                                          title=subscription_data_default['title'],
@@ -51,6 +50,7 @@ def test_service_create_subscription_manual_full(subscription_data_default,
                                                                          status="active",
                                                                          started_at=timezone.now(),
                                                                          ended_at=None,
+                                                                         billing_timezone="Europe/Moscow",
                                                                          payment_method_label="VISA",
                                                                          owner_note="Доп. заметки",
                                                                          is_shared=False,
@@ -122,8 +122,7 @@ def test_service_create_subscription_verified_full(subscription_data_default,
 
     test_schedule = ScheduleInput(period_unit="week",
                                   period_interval=1,
-                                  anchor_weekday=1,
-                                  billing_timezone="Europe/Moscow")
+                                  anchor_weekday=1)
 
     test_service_subscription_verified = create_subscription_with_defaults(user=test_u,
                                                                            title="Тестовая подписка 1",
@@ -132,6 +131,7 @@ def test_service_create_subscription_verified_full(subscription_data_default,
                                                                            status="active",
                                                                            started_at=timezone.now(),
                                                                            ended_at=None,
+                                                                           billing_timezone="Europe/Moscow",
                                                                            payment_method_label="VISA",
                                                                            owner_note="Доп. заметки",
                                                                            is_shared=False,

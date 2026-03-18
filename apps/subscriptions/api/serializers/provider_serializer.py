@@ -2,7 +2,9 @@ from rest_framework import serializers
 from apps.subscriptions.models import Provider
 
 class ProviderSerializer(serializers.ModelSerializer):
-
+    """
+    Сериализатор для CRUD по справочнику провайдеров
+    """
     class Meta:
         model = Provider
         fields = [
@@ -26,7 +28,9 @@ class ProviderSerializer(serializers.ModelSerializer):
 
 
 class ProviderPublicSerializer(serializers.ModelSerializer):
-
+    """
+    Публичный сериализатор для получения провайдера
+    """
     class Meta:
         model = Provider
         fields = [

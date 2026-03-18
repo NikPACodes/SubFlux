@@ -71,6 +71,8 @@ class Subscription(models.Model):
 
     class Meta:
         db_table = "subscriptions"
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
         indexes = [
             # Индекс для ускорения поиска подписок пользователя по статусу
             models.Index(fields=["user", "status"]),
