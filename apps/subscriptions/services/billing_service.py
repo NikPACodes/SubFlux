@@ -17,7 +17,7 @@ from django.core.exceptions import ValidationError
 from apps.subscriptions.models import BillingSchedule, Subscription
 
 from utils.enums import PeriodUnit
-from utils.validators import validate_billing_schedule_params
+from utils.validators import validator_billing_schedule_params
 from utils.date_calculator import get_tzinfo, add_months, clamp_day_to_month, next_week
 
 
@@ -71,7 +71,7 @@ def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetim
     # Переводим опорный момент в локальную зону “подписки”
     local_dtime = timezone.localtime(from_dt, tzone)
 
-    validate_billing_schedule_params(period_unit=schedule.period_unit,
+    validator_billing_schedule_params(period_unit=schedule.period_unit,
                                      period_interval=schedule.period_interval,
                                      anchor_day=schedule.anchor_day,
                                      anchor_weekday=schedule.anchor_weekday,

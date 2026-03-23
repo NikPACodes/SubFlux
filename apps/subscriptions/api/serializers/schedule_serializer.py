@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from utils.enums import PeriodUnit
-from utils.validators import validate_billing_schedule_params
+from utils.validators import validator_billing_schedule_params
 
 
 class ScheduleInputSerializer(serializers.Serializer):
@@ -17,7 +17,7 @@ class ScheduleInputSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         try:
-            validate_billing_schedule_params(
+            validator_billing_schedule_params(
                 period_unit=attrs.get('period_unit'),
                 period_interval=attrs.get('period_interval'),
                 anchor_day=attrs.get('anchor_day'),

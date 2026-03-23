@@ -1,13 +1,12 @@
-from django.template.context_processors import request
 from rest_framework import serializers
 from apps.subscriptions.models import Subscription
-from utils.enums import SubscriptionStatus, PriceHistorySource
+from utils.enums import SubscriptionStatus
 from .price_serializer import PriceInputSerializer
 from .schedule_serializer import ScheduleInputSerializer
 from apps.subscriptions.models import Provider, Category
 from apps.subscriptions.services.subscription_service import (create_subscription_with_defaults, set_subscription_price,
-                                                              PriceInput, ScheduleInput)
-from utils.validators import validator_currency
+                                                              update_subscription_data, PriceInput, ScheduleInput)
+
 
 class SubscriptionReadSerializer(serializers.ModelSerializer):
     """
@@ -66,20 +65,16 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     def validate_provider_id(self, value):
         if value is None:
             return value
-
         if Provider.objects.filter(pk=value).exists():
             raise serializers.ValidationError("Provider не найден")
-
         return value
 
 
     def validate_category_id(self, value):
         if value is None:
             return value
-
         if Category.objects.filter(pk=value).exists():
             raise serializers.ValidationError("Category не найден")
-
         return value
 
 
@@ -120,27 +115,39 @@ class SubscriptionCreateSerializer(serializers.Serializer):
         )
 
 
-class SubscriptionUpdateSerializer(serializers.ModelSerializer): #TODO Переработать для доменных операций закрытие подписки, даты
+class SubscriptionUpdateSerializer(serializers.ModelSerializer):
     """
     Сериализатор для обновления данных по подписке (!!! Данные по Цене и Расписанию НЕ ОБНОВЛЯЮТСЯ !!!)
 
     Для обновления Цены используйте SubscriptionSetPriceSerializer
     """
-    class Meta:
-        model = Subscription
-        fields = [
-            'title',
-            'description',
-            'status',
-            'provider',
-            'category',
-            'billing_timezone',
-            'payment_method_label',
-            'owner_note',
-            'is_shared',
-            'started_at',
-            'ended_at',
-        ]
+    title = serializers.CharField(max_length=255, required=False)
+    description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+    category_id = serializers.IntegerField(required=False, allow_null=True)
+
+    billing_timezone = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
+
+    payment_method_label = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
+    owner_note = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+    is_shared = serializers.BooleanField(default=False)
+
+    def validate_category_id(self, value):
+        if value is None:
+            return value
+        if Category.objects.filter(pk=value).exists():
+            raise serializers.ValidationError("Category не найден")
+        return value
+
+    def update(self, instance, validated_data):
+        category = instance.category
+        if 'category_id' in validated_data:
+            category_id = validated_data.pop('category_id')
+            category = Category.objects.get(pk=category_id) if category_id else None
+
+        return update_subscription_data(subscription=instance,
+                                        category=category,
+                                        **validated_data)
 
 
 class SubscriptionSetPriceSerializer(PriceInputSerializer):
@@ -157,3 +164,10 @@ class SubscriptionSetPriceSerializer(PriceInputSerializer):
                                       effective_from=price_input.effective_from,
                                       reason=price_input.reason,
                                       source=price_input.source)
+
+
+class SubscriptionChangeProviderSerializer(PriceInputSerializer):
+    """
+    Сериализатор для изменения провайдера в подписке
+    """
+    pass

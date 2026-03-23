@@ -1,11 +1,12 @@
 from django.core.validators import ValidationError
+from django.utils import timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import re
 from pycountry import currencies, countries
 from decimal import Decimal
 from typing import Optional
 
-from utils.enums import PriceHistorySource, PeriodUnit
+from utils.enums import PriceHistorySource, PeriodUnit, SubscriptionStatus
 
 _CURRENCY_RE = re.compile(r'^[A-Z]{3}$')   # ISO 4217 (USD/EUR/RUB...)
 _COUNTRY_RE = re.compile(r'^[A-Z]{2}$')    # ISO 3166-1 alpha-2 (US, DE, RU, ...) или GLOBAL
@@ -82,8 +83,8 @@ def validator_price_history_source(source: str, verified_price = None,
         raise ValidationError("Некорректный источник цены (price.source). Поддерживаются verified/manual режимы")
 
 
-def validate_billing_schedule_params(*, period_unit: str, period_interval: int, anchor_day: Optional[int],
-                                        anchor_weekday: Optional[int], grace_days: int):
+def validator_billing_schedule_params(period_unit: str, period_interval: int, anchor_day: Optional[int],
+                                      anchor_weekday: Optional[int], grace_days: int):
     """
     Валидация расписания “по смыслу”.
 
@@ -104,3 +105,44 @@ def validate_billing_schedule_params(*, period_unit: str, period_interval: int, 
         raise ValidationError("anchor_day является обязательным для интервала (period_unit) по месяцам (MONTH)")
     elif period_unit == PeriodUnit.WEEK and anchor_weekday is None:
         raise ValidationError("anchor_weekday является обязательным для интервала (period_unit) по неделям (WEEK)")
+
+
+def validator_subscription_status(status: str, started_at, ended_at=None):
+    """
+    Валидация состояний подписки
+
+    DELAYED -> Отложенное начало подписки
+        * started_at > Текущей даты
+        * ended_at - Пуст
+    ACTIVE -> Активная подписка
+        * started_at <= Текущей даты
+        * ended_at - Пуст
+    CANCELED -> Отменена, но ещё активна
+        * started_at <= Текущей даты
+        * ended_at >= Текущей даты
+    EXPIRED -> Отменена
+        * ended_at < Текущей даты
+
+    TODO PAUSED и TRIAL в проработке
+    """
+
+    if started_at is None:
+        raise ValidationError("Дата начала (started_at) не может быть пустой")
+    else:
+        if started_at <= timezone.now() and status == SubscriptionStatus.DELAYED:
+            raise ValidationError("DELAYED: Дата начала (started_at) должна быть больше текущей даты")
+        if started_at > timezone.now() and status != SubscriptionStatus.DELAYED:
+            raise ValidationError("Дата начала (started_at) не должна превышать текущую")
+        if started_at >= timezone.now() and status == SubscriptionStatus.EXPIRED:
+            raise ValidationError("EXPIRED: Дата начала (started_at) должна быть меньше текущей даты")
+
+    if ended_at is None:
+        if status in [SubscriptionStatus.CANCELED, SubscriptionStatus.EXPIRED]:
+            raise ValidationError("CANCELED/EXPIRED: Дата окончания (ended_at) обязательна к заполнению")
+    else:
+        if status in [SubscriptionStatus.ACTIVE, SubscriptionStatus.PAUSED]:
+            raise ValidationError("ACTIVE/PAUSED: Дата окончания (ended_at) должна быть пустой")
+        if ended_at < timezone.now() and status == SubscriptionStatus.CANCELED:
+            raise ValidationError("CANCELED: Дата окончания (ended_at) не может быть меньше текущей даты")
+        if ended_at >= timezone.now() and status == SubscriptionStatus.EXPIRED:
+            raise ValidationError("EXPIRED: Дата окончания (ended_at) должна быть меньше текущей даты")

@@ -9,8 +9,15 @@ class SubscriptionStatus(models.TextChoices):
     PAUSED = "paused", "Paused"
     CANCELED = "canceled", "Canceled"
     TRIAL = "trial", "Trial"
+    DELAYED = "delayed", "Delayed"
     EXPIRED = "expired", "Expired"
 
+class SubscriptionCancelMode(models.TextChoices):
+    """
+    Режимы отмены подписки
+    """
+    IMMEDIATELY = "immediately", "immediately"
+    AT_PERIOD_END = "at_period_end", "At period end"
 
 class VerifiedPriceSource(models.TextChoices):
     """
