@@ -12,17 +12,19 @@ _CURRENCY_RE = re.compile(r'^[A-Z]{3}$')   # ISO 4217 (USD/EUR/RUB...)
 _COUNTRY_RE = re.compile(r'^[A-Z]{2}$')    # ISO 3166-1 alpha-2 (US, DE, RU, ...) или GLOBAL
 
 
-def validator_timezone(value: str):
+def validator_timezone(value: str, allow_empty: bool = False):
     """
     Валидация IANA timezone ("Asia/Yekaterinburg", "Europe/Moscow"...)
     """
     if value in (None, ''):
-        return
+        if allow_empty:
+            return
+        raise ValidationError(f'Timezone не может быть пустой')
 
     try:
         ZoneInfo(value)
     except ZoneInfoNotFoundError as e:
-        raise ValidationError(f'Timezone не существует: {value}') from e
+        raise ValidationError(f'Некорректная IANA timezone: {value}') from e
 
 
 def validator_currency(value: str):

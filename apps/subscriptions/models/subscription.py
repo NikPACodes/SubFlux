@@ -61,11 +61,12 @@ class Subscription(models.Model):
 
     # IANA timezone ("Asia/Yekaterinburg", "Europe/Moscow"...)
     # Используется дял корректного расчета дат списания с учетом локального времени подписки
-    billing_timezone = models.CharField(max_length=64, blank=True, null=True, validators=[validator_timezone])
+    billing_timezone = models.CharField(max_length=64, blank=False, null=False, default="UTC", validators=[validator_timezone])
 
     # Факт последнего списания
     last_billed_at = models.DateTimeField(blank=True, null=True)
 
+    is_deleted = models.BooleanField(default=False)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
 

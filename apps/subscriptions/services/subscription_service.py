@@ -180,7 +180,6 @@ def update_subscription_data(*, subscription: Subscription, title: str, descript
                              category: Optional[Category] = None,  billing_timezone: Optional[str] = None,
                              payment_method_label: Optional[str] = None,  owner_note: Optional[str] = None,
                              is_shared: bool = None) -> Subscription:
-    subscription_old = subscription
     # Блочим subscription чтобы не получить конкурентного обновления
     sub_lock = Subscription.objects.select_for_update().get(pk=subscription.pk)
 

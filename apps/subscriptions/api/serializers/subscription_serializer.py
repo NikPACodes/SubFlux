@@ -65,7 +65,7 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     def validate_provider_id(self, value):
         if value is None:
             return value
-        if Provider.objects.filter(pk=value).exists():
+        if not Provider.objects.filter(pk=value).exists():
             raise serializers.ValidationError("Provider не найден")
         return value
 
@@ -73,7 +73,7 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     def validate_category_id(self, value):
         if value is None:
             return value
-        if Category.objects.filter(pk=value).exists():
+        if not Category.objects.filter(pk=value).exists():
             raise serializers.ValidationError("Category не найден")
         return value
 
@@ -126,7 +126,7 @@ class SubscriptionUpdateSerializer(serializers.ModelSerializer):
 
     category_id = serializers.IntegerField(required=False, allow_null=True)
 
-    billing_timezone = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
+    billing_timezone = serializers.CharField(max_length=64, required=False, allow_blank=False, allow_null=False)
 
     payment_method_label = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
     owner_note = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
@@ -135,7 +135,7 @@ class SubscriptionUpdateSerializer(serializers.ModelSerializer):
     def validate_category_id(self, value):
         if value is None:
             return value
-        if Category.objects.filter(pk=value).exists():
+        if not Category.objects.filter(pk=value).exists():
             raise serializers.ValidationError("Category не найден")
         return value
 
