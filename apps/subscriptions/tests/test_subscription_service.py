@@ -13,7 +13,6 @@ from apps.subscriptions.services.subscription_service import (PriceInput, Schedu
 from utils.date_calculator import get_tzinfo, next_week
 
 
-# ---------- create_subscription_with_defaults ----------
 @pytest.mark.django_db
 def test_service_create_subscription_manual_full(subscription_data_default,
                                                  user_data_default, create_user,
@@ -47,7 +46,6 @@ def test_service_create_subscription_manual_full(subscription_data_default,
                                                                          title=subscription_data_default['title'],
                                                                          provider=test_p,
                                                                          category=test_cat,
-                                                                         status="active",
                                                                          started_at=timezone.now(),
                                                                          ended_at=None,
                                                                          billing_timezone="Europe/Moscow",
@@ -128,7 +126,6 @@ def test_service_create_subscription_verified_full(subscription_data_default,
                                                                            title="Тестовая подписка 1",
                                                                            provider=test_p,
                                                                            category=test_cat,
-                                                                           status="active",
                                                                            started_at=timezone.now(),
                                                                            ended_at=None,
                                                                            billing_timezone="Europe/Moscow",
@@ -199,7 +196,7 @@ def test_service_create_subscription_verified_or_manual(subscription_data_defaul
 
     with pytest.raises(ValidationError):
         create_subscription_with_defaults(user=test_u, title="Тестовая подписка 1", provider=test_p,
-                                          status="active", price=test_price_verified, schedule=test_schedule)
+                                          price=test_price_verified, schedule=test_schedule)
 
 
 @pytest.mark.django_db
@@ -217,7 +214,7 @@ def test_service_create_subscription_anchor(subscription_data_default, user_data
     test_schedule = ScheduleInput(period_unit="week")
 
     with pytest.raises(ValidationError):
-        create_subscription_with_defaults(user=test_u, title="Тестовая подписка 1", status="active",
+        create_subscription_with_defaults(user=test_u, title="Тестовая подписка 1",
                                           price=test_price, schedule=test_schedule)
 
 
@@ -236,7 +233,7 @@ def test_service_set_price_manual_closes_previous(subscription_data_default, use
     test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source="manual")
     test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=1)
     test_sub_manual = create_subscription_with_defaults(user=test_u, title=subscription_data_default['title'],
-                                                        status="active", price=test_price_manual, schedule=test_schedule)
+                                                        price=test_price_manual, schedule=test_schedule)
     test_prev_price = test_sub_manual.price_history.first()
 
     # Обновление цены (закрытие старой цены и открытия новой)
@@ -244,7 +241,7 @@ def test_service_set_price_manual_closes_previous(subscription_data_default, use
                                             amount=Decimal('100.50'),
                                             currency="RUB",
                                             effective_from=timezone.now(),
-                                            reason="Тестовое обновление цены",
+                                            change_reason="Тестовое обновление цены",
                                             source="manual")
 
     test_prev_price_update = PriceHistory.objects.get(pk=test_prev_price.pk)
@@ -280,8 +277,8 @@ def test_service_set_price_verified_closes_previous(subscription_data_default, u
     test_price_verified = PriceInput(verified_price=test_vp, source="verified")
     test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=1)
     test_sub_verified = create_subscription_with_defaults(user=test_u, title=subscription_data_default['title'],
-                                                        provider=test_p, status="active", price=test_price_verified,
-                                                        schedule=test_schedule)
+                                                          provider=test_p, price=test_price_verified,
+                                                          schedule=test_schedule)
     test_prev_price = test_sub_verified.price_history.first()
 
     test_vp_new = verified_price_factory(provider=test_p, plan_name=verified_price_data_default["plan_name"],
@@ -291,7 +288,7 @@ def test_service_set_price_verified_closes_previous(subscription_data_default, u
     test_new_price = set_subscription_price(subscription=test_sub_verified,
                                             verified_price=test_vp_new,
                                             effective_from=timezone.now(),
-                                            reason="Тестовое обновление цены",
+                                            change_reason="Тестовое обновление цены",
                                             source="verified")
 
     test_prev_price_update = PriceHistory.objects.get(pk=test_prev_price.pk)
@@ -321,7 +318,7 @@ def test_service_set_price_effective_from(subscription_data_default, user_data_d
     test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source="manual")
     test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=1)
     test_sub_manual = create_subscription_with_defaults(user=test_u, title=subscription_data_default['title'],
-                                                        status="active", price=test_price_manual, schedule=test_schedule)
+                                                        price=test_price_manual, schedule=test_schedule)
 
     with pytest.raises(ValueError):
         set_subscription_price(subscription=test_sub_manual, amount=Decimal('100.50'), currency="USD",

@@ -68,19 +68,38 @@ Roadmap основан на реальном состоянии кода и не
 Цель: сосредоточить всю бизнес-логику в явных доменных сервисах.
 
 ### Subscription service
-- [X] _create_subscription_with_defaults_
-  - создание Subscription
-  - создание активной PriceHistory
-  - создание текущего BillingSchedule
-- [X] _set_subscription_price_
-  - закрытие предыдущей цены
-  - создание новой PriceHistory
-  - обновление денормализованной цены подписки
-- [X] Запрет будущих цен (effective_from > now)
-- [ ] Метод обновления данных
+- [X] Создание Subscription (_create_subscription_with_defaults_)
+  - [X] создание Subscription
+  - [X] создание активной PriceHistory
+  - [X] создание текущего BillingSchedule
+- [X] Установка цены Subscription (_set_subscription_price_)
+  - [X] закрытие предыдущей цены
+  - [X] создание новой PriceHistory
+  - [X] обновление денормализованных полей по цене
+  - [X] запрет будущих цен (effective_from > now)
+- [X] Обновление простых полей Subscription (_update_subscription_data_)
+  - [X] обновление простых полей Subscription
+  - [X] при смене billing_timezone
+    - пересчет расписания (recalculate_schedule_next_run) 
+    - синхронизация поля next_billing_at (sync_subscription_next_billing)
+- [ ] Обновление состояний Subscription
+  - [ ] валидация корректности статусов
+  - [ ] валидация жизненного цикла Subscription
+  - [ ] установка status и обновление дат started_at, ended_at, next_billing_at
+- [ ] Обновление провайдера Subscription
+  - [ ] валидация соответствия VerifiedPrice и Provider
+  - [ ] установка нового провайдера
 - [ ] Метод мягкого удаления данных
+  - [ ] проставления флага is_deleted на Subscription
+  - [ ] исключение данных из всех выборок
+  - [ ] создание записи в таблице на удаления
 - [ ] Метод восстановления удаленных данных
+  - [ ] исключение записи из таблицы на удаления
+  - [ ] очистка флага is_deleted на Subscription
 - [ ] Task для отчистки записей на удаление
+  - [ ] выборка всех записей по которым дата удаления равна текущей
+  - [ ] удаление из перечня
+  - [ ] рекурсивное удаление Subscription / PriceHistory / BillingSchedule
 
 ### Billing service
 - [X] _recalculate_schedule_next_run_

@@ -3,7 +3,7 @@ from apps.subscriptions.api.permissions import IsOwner
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
-from apps.subscriptions.api.serializers import (SubscriptionSetPriceSerializer,
+from apps.subscriptions.api.serializers import (SubscriptionSetPriceSerializer, SubscriptionSetStatusSerializer,
                                                 SubscriptionReadSerializer, SubscriptionCreateSerializer, SubscriptionUpdateSerializer)
 from apps.subscriptions.models import Subscription
 from rest_framework.response import Response
@@ -28,6 +28,9 @@ class SubscriptionViewSet(ModelViewSet):
 
         if self.action == 'set_price':
             return SubscriptionSetPriceSerializer
+
+        if self.action == 'set_status':
+            return SubscriptionSetStatusSerializer
 
         return SubscriptionReadSerializer
 
@@ -67,19 +70,26 @@ class SubscriptionViewSet(ModelViewSet):
     @action(detail=True, methods=['post'], url_path='set-price')
     def set_price(self, request, pk=None):
         subscription = self.get_object()
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # Внутри serializer вызывается сервисный слой (set_subscription_price)
-        serializer.save(subscription=subscription)
+        subscription = serializer.save(subscription=subscription)
         return Response(
             SubscriptionReadSerializer(subscription).data,
             status=status.HTTP_200_OK,
         )
 
-    # @action(detail=True, methods=['post'], url_path='set-state')
-    # def set_state(self, request, pk=None):
-    #     pass
+    @action(detail=True, methods=['post'], url_path='set-status')
+    def set_status(self, request, pk=None):
+        subscription = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Внутри serializer вызывается сервисный слой (set_subscription_status)
+        subscription = serializer.save(subscription=subscription)
+        return Response(
+            SubscriptionReadSerializer(subscription).data,
+            status=status.HTTP_200_OK,
+        )
 
     # @action(detail=True, methods=['post'], url_path='set-provider')
     # def set_provider(self, request, pk=None):

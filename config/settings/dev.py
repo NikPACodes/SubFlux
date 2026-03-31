@@ -1,12 +1,13 @@
 """
 Dev - настроек для локальной разработке
 """
+from dotenv import load_dotenv
+from pathlib import Path
+
+ENV_DEV_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(ENV_DEV_DIR / '.env.dev')
 
 from .base import *
-from dotenv import load_dotenv
-
-dotenv_path = os.path.join(BASE_DIR, '.env.dev')
-load_dotenv(dotenv_path)
 
 # --------------------------------------------------------------------------
 # Core

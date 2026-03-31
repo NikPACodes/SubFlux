@@ -35,9 +35,9 @@ class Subscription(models.Model):
                               default=SubscriptionStatus.ACTIVE, db_index=True)
 
     # Дата начала подписки
-    started_at = models.DateField(blank=True, null=True)
+    started_at = models.DateTimeField(blank=True, null=True)
     # Дата окончания/отмены подписки
-    ended_at = models.DateField(blank=True, null=True)
+    ended_at = models.DateTimeField(blank=True, null=True)
 
     # Метод оплаты (текстовое поле для удобства пользователя, НЕ содержит секретных данных
     # Прим: "МИР **** 1234", "PayPal", "VISA" ...
@@ -65,6 +65,8 @@ class Subscription(models.Model):
 
     # Факт последнего списания
     last_billed_at = models.DateTimeField(blank=True, null=True)
+
+    meta = models.JSONField(default=dict, blank=True)
 
     is_deleted = models.BooleanField(default=False)
     create_at = models.DateTimeField(auto_now_add=True)

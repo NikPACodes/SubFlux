@@ -118,7 +118,7 @@ def subscription_factory(db):
                              provider: Provider=None, category: Category=None,
                              started_at: datetime.date=None, ended_at: datetime.date=None,
                              payment_method_label: str=None, owner_note: str=None,
-                             is_shared: bool=False, billing_timezone: str=None) -> Subscription:
+                             is_shared: bool=False, billing_timezone: str="UTC") -> Subscription:
         return Subscription.objects.create(user=user, title=title, description=description, status=status,
                                            provider=provider, category=category, started_at=started_at, ended_at=ended_at,
                                            payment_method_label=payment_method_label, owner_note=owner_note,

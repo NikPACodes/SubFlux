@@ -20,6 +20,7 @@ from utils.enums import PeriodUnit
 from utils.validators import validator_billing_schedule_params
 from utils.date_calculator import get_tzinfo, add_months, clamp_day_to_month, next_week
 
+#----------------------------------------------------------------------------------------------
 
 def _next_for_day(dtime: datetime, interval: int) -> datetime:
     """
@@ -56,26 +57,123 @@ def _next_for_year(dtime: datetime, interval: int) -> datetime:
     day = clamp_day_to_month(year, dtime.month, dtime.day)
     return dtime.replace(year=year, day=day)
 
+#----------------------------------------------------------------------------------------------
+
+def get_current_schedule(sub: Subscription) -> BillingSchedule:
+    """
+    Получение активного расписания по подписке
+
+    ! Возможна только 1 запланированной расписание с is_current=True
+    """
+    return BillingSchedule.objects.filter(subscription=sub, is_current=True).order_by("-create_at").first()  #First для подстраховки
+
+
+def get_last_schedule(sub: Subscription) -> BillingSchedule:
+    """
+    Получение последнего расписания по подписке
+    """
+    return BillingSchedule.objects.filter(subscription=sub).order_by("-create_at").first()
+
+
+def close_current_schedule(sub: Subscription) -> BillingSchedule|None:
+    """
+    Закрытие текущего активного расписания
+    """
+    current_schedule = get_current_schedule(sub)
+    if not current_schedule:
+        return None
+
+    current_schedule.is_current = False
+    current_schedule.save(update_fields=["is_current", "update_at"])
+    return current_schedule
+
+
+def create_schedule_from_existing(sub: Subscription, from_dt = None) -> BillingSchedule:
+    """
+    Создание нового активного расписание на основе последнего
+    next_run_at рассчитывается по обычной логике через timezone подписки
+    """
+    from_dt = from_dt or timezone.now()
+    last_schedule = get_last_schedule(sub)
+    if not last_schedule:
+        raise ValidationError("Невозможно создать подписку: отсутствует базовое расписание.")
+
+    new_schedule = BillingSchedule.objects.create(subscription=sub,
+                                                  period_unit=last_schedule.period_unit,
+                                                  period_interval=last_schedule.period_interval,
+                                                  anchor_day=last_schedule.anchor_day,
+                                                  anchor_weekday=last_schedule.anchor_weekday,
+                                                  trial_ends_at=last_schedule.trial_ends_at,
+                                                  grace_days=last_schedule.grace_days,
+                                                  next_run_at=from_dt,  # временное значение
+                                                  is_current=True)
+
+    return recalculate_schedule_next_run(new_schedule, from_dt=from_dt)
+
+
+def create_schedule_from_remaining_period(*, sub: Subscription, remaining_billing_seconds: int, from_dt = None) -> BillingSchedule:
+    """
+    Создание нового активного расписание на основе последнего
+    next_run_at рассчитывается не от полного периода, а от остатка
+    """
+    from_dt = from_dt or timezone.now()
+    last_schedule = get_last_schedule(sub)
+    if not last_schedule:
+        raise ValidationError("Невозможно возобновить подписку: отсутствует базовое расписание.")
+
+    new_schedule = BillingSchedule.objects.create(subscription=sub,
+                                                  period_unit=last_schedule.period_unit,
+                                                  period_interval=last_schedule.period_interval,
+                                                  anchor_day=last_schedule.anchor_day,
+                                                  anchor_weekday=last_schedule.anchor_weekday,
+                                                  trial_ends_at=last_schedule.trial_ends_at,
+                                                  grace_days=last_schedule.grace_days,
+                                                  next_run_at=from_dt,  # временное значение
+                                                  is_current=True)
+
+    return recalculate_schedule_next_run(new_schedule, from_dt=from_dt, remaining_billing_seconds=remaining_billing_seconds)
+
+#----------------------------------------------------------------------------------------------
 
 @transaction.atomic
-def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetime) -> BillingSchedule:
+def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetime, remaining_billing_seconds: int = None) -> BillingSchedule:
     """
     Пересчитывает schedule.next_run_at, учитывая timezone подписки.
 
+    Режимы:
+    1) Расчет на неполный период:
+       - если передан remaining_billing_seconds, следующий run считается как from_dt + remaining_billing_seconds
+    2) Расчет на полный период:
+       - period_unit / period_interval / anchors / trial_ends_at
+
     from_dt — “опорный момент”, от которого считаем следующий run.
-    Обычно это timezone.now().
+    Хранение всегда в UTC.
     """
     sub = schedule.subscription
+    #-----------------------------
+    # 1) Расчет на неполный период
+    #-----------------------------
+    if remaining_billing_seconds is not None:
+        if remaining_billing_seconds < 0:
+            raise ValidationError("remaining_billing_seconds не может быть отрицательным.")
+
+        schedule.next_run_at = from_dt + timedelta(seconds=remaining_billing_seconds)
+        schedule.save(update_fields=["next_run_at", "update_at"])
+        return schedule
+
+    #-----------------------------
+    # 2) Расчет на полный период
+    #-----------------------------
     tzone = get_tzinfo(sub.billing_timezone)
 
     # Переводим опорный момент в локальную зону “подписки”
     local_dtime = timezone.localtime(from_dt, tzone)
 
     validator_billing_schedule_params(period_unit=schedule.period_unit,
-                                     period_interval=schedule.period_interval,
-                                     anchor_day=schedule.anchor_day,
-                                     anchor_weekday=schedule.anchor_weekday,
-                                     grace_days=schedule.grace_days)
+                                      period_interval=schedule.period_interval,
+                                      anchor_day=schedule.anchor_day,
+                                      anchor_weekday=schedule.anchor_weekday,
+                                      grace_days=schedule.grace_days)
 
     # Trial: если trial_ends_at позже from_dt, считаем от конца trial
     if schedule.trial_ends_at:

@@ -1,13 +1,15 @@
 from rest_framework import serializers
+from django.utils import timezone
 from apps.subscriptions.models import Subscription
 from utils.enums import SubscriptionStatus
 from .price_serializer import PriceInputSerializer
 from .schedule_serializer import ScheduleInputSerializer
 from apps.subscriptions.models import Provider, Category
-from apps.subscriptions.services.subscription_service import (create_subscription_with_defaults, set_subscription_price,
-                                                              update_subscription_data, PriceInput, ScheduleInput)
+from apps.subscriptions.services.subscription_service import (create_subscription_with_defaults, update_subscription_data,
+                                                              set_subscription_price, set_subscription_status,
+                                                              PriceInput, ScheduleInput)
 
-
+#------------------------------------ READ Subscription ------------------------------------
 class SubscriptionReadSerializer(serializers.ModelSerializer):
     """
     Сериализатор для получения данных по подпискам
@@ -43,18 +45,18 @@ class SubscriptionReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+#------------------------------------ CREATE Subscription ------------------------------------
 class SubscriptionCreateSerializer(serializers.Serializer):
     """
     Сериализатор для создания подписок
     """
     title = serializers.CharField(max_length=255)
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    status = serializers.ChoiceField(choices=SubscriptionStatus, default=SubscriptionStatus.ACTIVE)
     provider_id = serializers.IntegerField(required=False, allow_null=True)
     category_id = serializers.IntegerField(required=False, allow_null=True)
-    started_at = serializers.DateField(required=True, allow_null=True)
-    ended_at = serializers.DateField(required=True, allow_null=True)
-    billing_timezone = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
+    started_at = serializers.DateTimeField(required=True, allow_null=True)
+    ended_at = serializers.DateTimeField(required=False, allow_null=True)
+    billing_timezone = serializers.CharField(max_length=64, required=False, allow_blank=False, allow_null=False)
     payment_method_label = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
     owner_note = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
     is_shared = serializers.BooleanField(default=False)
@@ -97,25 +99,23 @@ class SubscriptionCreateSerializer(serializers.Serializer):
         price_input = PriceInput(**price_data)
         schedule_input = ScheduleInput(**schedule_data)
 
-        return create_subscription_with_defaults(
-            user = request.user,
-            title = validated_data.get('title'),
-            description = validated_data.get('description'),
-            provider = provider,
-            category = category,
-            status = validated_data.get('status', SubscriptionStatus.ACTIVE),
-            started_at = validated_data.get('started_at'),
-            ended_at = validated_data.get('ended_at'),
-            billing_timezone  = validated_data.get('billing_timezone'),
-            payment_method_label = validated_data.get('payment_method_label'),
-            owner_note = validated_data.get('owner_note'),
-            is_shared = validated_data.get('is_shared', False),
-            price = price_input,
-            schedule = schedule_input,
-        )
+        return create_subscription_with_defaults(user = request.user,
+                                                 title = validated_data.get('title'),
+                                                 description = validated_data.get('description'),
+                                                 provider = provider,
+                                                 category = category,
+                                                 started_at = validated_data.get('started_at'),
+                                                 ended_at = validated_data.get('ended_at'),
+                                                 billing_timezone  = validated_data.get('billing_timezone'),
+                                                 payment_method_label = validated_data.get('payment_method_label'),
+                                                 owner_note = validated_data.get('owner_note'),
+                                                 is_shared = validated_data.get('is_shared', False),
+                                                 price = price_input,
+                                                 schedule = schedule_input,)
 
 
-class SubscriptionUpdateSerializer(serializers.ModelSerializer):
+#------------------------------------ UPDATE Subscription ------------------------------------
+class SubscriptionUpdateSerializer(serializers.Serializer):
     """
     Сериализатор для обновления данных по подписке (!!! Данные по Цене и Расписанию НЕ ОБНОВЛЯЮТСЯ !!!)
 
@@ -150,6 +150,7 @@ class SubscriptionUpdateSerializer(serializers.ModelSerializer):
                                         **validated_data)
 
 
+#------------------------------------ SET Price Subscription ------------------------------------
 class SubscriptionSetPriceSerializer(PriceInputSerializer):
     """
     Сериализатор для сохранения цены в подписке
@@ -162,12 +163,46 @@ class SubscriptionSetPriceSerializer(PriceInputSerializer):
                                       amount=price_input.amount,
                                       currency=price_input.currency,
                                       effective_from=price_input.effective_from,
-                                      reason=price_input.reason,
+                                      change_reason=price_input.change_reason,
                                       source=price_input.source)
 
 
-class SubscriptionChangeProviderSerializer(PriceInputSerializer):
+#------------------------------------ SET Provider Subscription ------------------------------------
+class SubscriptionSetProviderSerializer(serializers.Serializer):
     """
     Сериализатор для изменения провайдера в подписке
     """
     pass
+
+
+#------------------------------------ SET Status Subscription ------------------------------------
+class SubscriptionSetStatusSerializer(serializers.Serializer):
+    """
+    Сериализатор для изменения статуса в подписке
+    """
+    status = serializers.ChoiceField(required=True, choices=SubscriptionStatus)
+    started_at = serializers.DateTimeField(required=False, allow_null=True)
+    # ended_at = serializers.DateTimeField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        status = attrs.get('status')
+        started_at = attrs.get('started_at')
+
+        if status == SubscriptionStatus.TRIAL:
+            raise serializers.ValidationError("TRIAL нельзя устанавливать через set_status.")
+
+        if status == SubscriptionStatus.DELAYED:
+            if started_at is None:
+                raise serializers.ValidationError("Поле started_at является обязательным для статуса DELAYED")
+            if started_at <= timezone.now():
+                raise serializers.ValidationError("Для статуса DELAYED поле started_at должно быть больше текущей даты")
+        else:
+            if started_at is not None:
+                raise serializers.ValidationError("Поле started_at заполняется исключительно для статуса DELAYED")
+
+        return attrs
+
+    def save(self, subscription):
+        return set_subscription_status(subscription=subscription,
+                                       status_new=self.validated_data.get('status'),
+                                       started_at=self.validated_data.get('started_at'))
