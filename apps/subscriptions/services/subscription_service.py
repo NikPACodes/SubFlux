@@ -243,6 +243,7 @@ def create_subscription_with_defaults(*, user,
     - PriceHistory (текущая цена)
     - BillingSchedule (актуальный график)
 
+    Определяет начальный статус.
     Рассчитывает next_run_at и синхронизирует Subscription.next_billing_at.
 
     Это "правильная" точка входа для создания новой подписки в домене.
