@@ -206,3 +206,24 @@ class SubscriptionSetStatusSerializer(serializers.Serializer):
         return set_subscription_status(subscription=subscription,
                                        status_new=self.validated_data.get('status'),
                                        started_at=self.validated_data.get('started_at'))
+
+
+#------------------------------------  Cancel Subscription ------------------------------------
+class SubscriptionCancelSerializer(serializers.Serializer):
+    """
+    Сериализатор для завершения подписки
+    """
+    cancel_mode = serializers.ChoiceField(choices=["immediately", "end_of_period"],
+                                          default="end_of_period")
+
+    def save(self, subscription):
+        cancel_mode = self.validated_data.get('cancel_mode')
+        if cancel_mode == "end_of_period":
+            cancel_status = SubscriptionStatus.CANCELED
+        elif cancel_mode == "immediately":
+            cancel_status = SubscriptionStatus.EXPIRED
+        else:
+            raise serializers.ValidationError(f"Неизвестный режим {cancel_mode}")
+
+        return set_subscription_status(subscription=subscription,
+                                       status_new=cancel_status)

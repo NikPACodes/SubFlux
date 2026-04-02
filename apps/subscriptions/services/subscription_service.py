@@ -489,8 +489,6 @@ def set_subscription_status(*, subscription: Subscription,
     # Блокировка объекта Subscription
     subscription = Subscription.objects.select_for_update().get(pk=subscription.pk)
 
-    status_old = subscription.status
-
     # Проверка возможности смены статуса
     validator_subscription_status_change(status_current=subscription.status, status_new=status_new)
 

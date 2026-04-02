@@ -1,12 +1,16 @@
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from apps.subscriptions.api.permissions import IsOwner
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
-from apps.subscriptions.api.serializers import (SubscriptionSetPriceSerializer, SubscriptionSetStatusSerializer,
+from apps.subscriptions.api.serializers import (SubscriptionSetPriceSerializer,
+                                                SubscriptionSetStatusSerializer, SubscriptionCancelSerializer,
                                                 SubscriptionReadSerializer, SubscriptionCreateSerializer, SubscriptionUpdateSerializer)
 from apps.subscriptions.models import Subscription
+from apps.subscriptions.services.subscription_service import set_subscription_status
 from rest_framework.response import Response
+from utils.enums import SubscriptionStatus
 
 class SubscriptionViewSet(ModelViewSet):
     """
@@ -31,6 +35,9 @@ class SubscriptionViewSet(ModelViewSet):
 
         if self.action == 'set_status':
             return SubscriptionSetStatusSerializer
+
+        if self.action == 'cancel':
+            return SubscriptionCancelSerializer
 
         return SubscriptionReadSerializer
 
@@ -86,6 +93,44 @@ class SubscriptionViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         # Внутри serializer вызывается сервисный слой (set_subscription_status)
         subscription = serializer.save(subscription=subscription)
+        return Response(
+            SubscriptionReadSerializer(subscription).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        subscription = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Внутри serializer вызывается сервисный слой (set_subscription_status)
+        subscription = serializer.save(subscription=subscription)
+        return Response(
+            SubscriptionReadSerializer(subscription).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'])
+    def pause(self, request, pk=None):
+        subscription = self.get_object()
+        if subscription.status != SubscriptionStatus.ACTIVE:
+            raise ValidationError(f"Приостановка доступна только для действующих (активных) подписок.")
+
+        subscription = set_subscription_status(subscription=subscription,
+                                               status_new=SubscriptionStatus.PAUSED)
+        return Response(
+            SubscriptionReadSerializer(subscription).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'])
+    def resume(self, request, pk=None):
+        subscription = self.get_object()
+        if subscription.status != SubscriptionStatus.PAUSED:
+            raise ValidationError(f"Возможно возобновить только приостановленную подписку.")
+
+        subscription = set_subscription_status(subscription=subscription,
+                                                   status_new=SubscriptionStatus.ACTIVE)
         return Response(
             SubscriptionReadSerializer(subscription).data,
             status=status.HTTP_200_OK,

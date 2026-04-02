@@ -1,7 +1,8 @@
 from .category_serializer import CategorySerializer, CategoryPublicSerializer
 from .provider_serializer import ProviderSerializer, ProviderPublicSerializer
 from .subscription_serializer import (SubscriptionReadSerializer, SubscriptionCreateSerializer, SubscriptionUpdateSerializer,
-                                      SubscriptionSetPriceSerializer, SubscriptionSetStatusSerializer)
+                                      SubscriptionSetPriceSerializer,
+                                      SubscriptionSetStatusSerializer, SubscriptionCancelSerializer)
 from  .price_serializer import PriceInputSerializer
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     'SubscriptionUpdateSerializer',
     'SubscriptionSetPriceSerializer',
     'SubscriptionSetStatusSerializer',
+    'SubscriptionCancelSerializer',
     'PriceInputSerializer',
 ]
