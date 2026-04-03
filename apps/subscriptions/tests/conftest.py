@@ -67,6 +67,32 @@ def verified_price_data_default():
     }
 
 
+#--------- Базовые тестовые объекты ---------
+@pytest.fixture()
+def provider_default(db):
+    """
+    Базовый тестовый провайдер (сервис).
+    """
+    return Provider.objects.create(name="Тест Провайдер", slug="test_provider", description="Тестовый провайдер", is_active=True)
+
+@pytest.fixture()
+def category_default(db):
+    """
+    Базовая тестовая категория.
+    """
+    return Category.objects.create(name="Тестовая Категория", slug="test_category", sort_order=0)
+
+@pytest.fixture()
+def subscription_default(db, user_default):
+    """
+    Базовая подписка без связанных структур для Базового пользователя
+    """
+    return Subscription.objects.create(user=user_default, title="Тестовая подписка", description="Подписка на сервис",
+                                       status="active", started_at="2001-01-01", ended_at="2001-02-01",
+                                           payment_method_label="VISA", owner_note="заметки пользователя",
+                                           is_shared=False, billing_timezone="UTC")
+
+
 #--------- Фабрики для создания тестовых объектов ---------
 @pytest.fixture()
 def provider_factory(db):

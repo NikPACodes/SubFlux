@@ -99,22 +99,16 @@ def _get_price_subscription(sub: Subscription) -> PriceHistory:
     return PriceHistory.objects.filter(subscription=sub, effective_to__isnull=True).select_related('verified_price').first()  # First для подстраховки
 
 
-def _set_billing_timezone_subscription(sub: Subscription, new_billing_timezone: str) -> bool:
+def _recalculate_schedule(sub: Subscription):
     """
-    Обновление временной зоны подписки и синхронизация расписания
+    Обновление и синхронизация расписания
     """
-    if new_billing_timezone is None or new_billing_timezone == sub.billing_timezone:
-        return False
-
-    validator_timezone(new_billing_timezone)
-    sub.billing_timezone = new_billing_timezone
-
     if sub.status == SubscriptionStatus.ACTIVE:
+        now = timezone.now()
         schedule = get_current_schedule(sub)
         if schedule:
-            recalculate_schedule_next_run(schedule, new_billing_timezone)
+            recalculate_schedule_next_run(schedule, from_dt=now)
             sync_subscription_next_billing(sub)
-    return True
 
 
 def _build_pause_meta(*, subscription: Subscription, now) ->  dict:
@@ -389,12 +383,17 @@ def update_subscription_data(*, subscription: Subscription,
         update_fields.append('category')
 
     if billing_timezone is not None:
-        if _set_billing_timezone_subscription(sub_lock, billing_timezone):
-            update_fields.append('billing_timezone')
+        validator_timezone(billing_timezone)
+        if billing_timezone != sub_lock.billing_timezone:
+            sub_lock.billing_timezone = billing_timezone
+            update_fields.append("billing_timezone")
 
     if update_fields:
         update_fields.append('update_at')
         sub_lock.save(update_fields=update_fields)
+
+        if "billing_timezone" in update_fields:
+            _recalculate_schedule(sub_lock)
 
     return sub_lock
 
@@ -479,7 +478,7 @@ def set_subscription_status(*, subscription: Subscription,
     Используется во всех сценариях:
     - API
     - Tasks
-    -Внутренние сервисы
+    - Внутренние сервисы
 
     ! Смена статуса должна проходить исключительно через этот сервис
     Это основная точка входа для изменения статуса (состояния) Subscription в домене.
