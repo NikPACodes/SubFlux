@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from django.utils import timezone
 import datetime
-from apps.subscriptions.models import Provider, VerifiedPrice, Category, Subscription
+from apps.subscriptions.models import Provider, VerifiedPrice, Category, Subscription, BillingSchedule
 
 
 #--------- Базовые данные для моделей ---------
@@ -89,8 +89,8 @@ def subscription_default(db, user_default):
     """
     return Subscription.objects.create(user=user_default, title="Тестовая подписка", description="Подписка на сервис",
                                        status="active", started_at="2001-01-01", ended_at="2001-02-01",
-                                           payment_method_label="VISA", owner_note="заметки пользователя",
-                                           is_shared=False, billing_timezone="UTC")
+                                       payment_method_label="VISA", owner_note="заметки пользователя",
+                                       is_shared=False, billing_timezone="UTC")
 
 
 #--------- Фабрики для создания тестовых объектов ---------
@@ -150,3 +150,20 @@ def subscription_factory(db):
                                            payment_method_label=payment_method_label, owner_note=owner_note,
                                            is_shared=is_shared, billing_timezone=billing_timezone)
     return _create_subscription
+
+
+@pytest.fixture
+def schedule_factory(db):
+    """
+    Фабрика создания расписаний для тестов:
+    BillingSchedule = schedule_factory(subscription=..., ...)
+    """
+    def _create_schedule(*, subscription, period_unit="month", period_interval=1, anchor_day=1,
+                            anchor_weekday=None, trial_ends_at=None, grace_days=0, next_run_at=None, is_current=False):
+        if next_run_at is None:
+            next_run_at = timezone.now()
+        return BillingSchedule.objects.create(subscription=subscription, period_unit=period_unit,
+                                              period_interval=period_interval, anchor_day=anchor_day,
+                                              anchor_weekday=anchor_weekday, trial_ends_at=trial_ends_at,
+                                              grace_days=grace_days, next_run_at=next_run_at, is_current=is_current)
+    return _create_schedule

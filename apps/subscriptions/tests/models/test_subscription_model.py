@@ -32,8 +32,7 @@ def test_create_subscription(subscription_data_default,
 
 
 @pytest.mark.django_db
-def test_subscription_amount(subscription_data_default,
-                             user_default):
+def test_subscription_raises_amount(subscription_data_default, user_default):
     """
     current_price_amount не может быть меньше нуля
     """
@@ -58,7 +57,7 @@ def test_provider_link(provider_default):
 
 
 @pytest.mark.django_db
-def test_uniq_provider_link(provider_default):
+def test_uniq_provider_raises_link(provider_default):
     """
     У каждого провайдера только один URL регион+платформа+тип
     """
