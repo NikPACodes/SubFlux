@@ -100,7 +100,7 @@ def provider_factory(db):
     Фабрика создания провайдеров для тестов:
     ProviderX = provider_factory(name="...", slug="...", description="...")
     """
-    def _create_provider(name: str, slug: str, description: str = " ") -> Provider:
+    def _create_provider(*, name: str, slug: str, description: str = " ") -> Provider:
         return Provider.objects.create(name=name, slug=slug, description=description, is_active=True)
     return _create_provider
 
@@ -111,7 +111,7 @@ def verified_price_factory(db):
     Фабрика создания подтвержденных цен для тестов:
     VerifiedPriceX = verified_price_factory(provider=..., plan_name="...", amount=0.0, ...)
     """
-    def _create_verified_price(provider: Provider, plan_name: str, amount: Decimal, currency: str = "USD",
+    def _create_verified_price(*, provider: Provider, plan_name: str, amount: Decimal, currency: str = "USD",
                                region: str = "GLOBAL", period_unit: str = "month", period_interval: int = 1,
                                platform: str = "web", source: str = 'admin',
                                valid_from: timezone.datetime = timezone.now(), valid_to: Optional[timezone.datetime] = None,
@@ -129,7 +129,7 @@ def category_factory(db):
     Фабрика создания категорий подписок для тестов:
     CategoryX = category_factory(name=..., slug="...", sort_order=0)
     """
-    def _create_category(name: str, slug: str, sort_order: int = 0) -> Category:
+    def _create_category(*, name: str, slug: str, sort_order: int = 0) -> Category:
         return Category.objects.create(name=name, slug=slug,sort_order=sort_order)
     return _create_category
 
@@ -140,15 +140,15 @@ def subscription_factory(db):
     Фабрика создания подписок для тестов:
     SubscriptionX = subscription_factory(user=..., title="...", ...)
     """
-    def _create_subscription(user,  title: str, description: str=None, status: str="active",
+    def _create_subscription(*, user,  title: str, description: str=None, status: str="active",
                              provider: Provider=None, category: Category=None,
                              started_at: datetime.date=None, ended_at: datetime.date=None,
                              payment_method_label: str=None, owner_note: str=None,
-                             is_shared: bool=False, billing_timezone: str="UTC") -> Subscription:
+                             is_shared: bool=False, billing_timezone: str="UTC", meta=None) -> Subscription:
         return Subscription.objects.create(user=user, title=title, description=description, status=status,
                                            provider=provider, category=category, started_at=started_at, ended_at=ended_at,
                                            payment_method_label=payment_method_label, owner_note=owner_note,
-                                           is_shared=is_shared, billing_timezone=billing_timezone)
+                                           is_shared=is_shared, billing_timezone=billing_timezone, meta=meta)
     return _create_subscription
 
 

@@ -1,17 +1,18 @@
 import pytest
 from decimal import Decimal
 from datetime import timedelta, datetime
-
+from zoneinfo import ZoneInfo
 from django.utils import timezone
 from django.core.validators import ValidationError
-
 from apps.subscriptions.models import PriceHistory
 from apps.subscriptions.services.subscription_service import (PriceInput, ScheduleInput,
                                                               create_subscription_with_defaults,
                                                               update_subscription_data,
-                                                              set_subscription_price)
-
+                                                              set_subscription_price,
+                                                              status_transition_calculation,
+                                                              set_subscription_status)
 from utils.date_calculator import get_tzinfo, next_week
+from utils.enums import SubscriptionStatus, PriceHistorySource, PeriodUnit
 
 
 #--------------------------- Тесты сервиса по созданию подписки ---------------------------
@@ -35,9 +36,9 @@ def test_service_create_subscription_manual_full(subscription_data_default,
 
     test_price_manual = PriceInput(amount=Decimal('20.10'),
                                    currency="USD",
-                                   source="manual")
+                                   source=PriceHistorySource.MANUAL)
 
-    test_schedule = ScheduleInput(period_unit="week",
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK,
                                   period_interval=1,
                                   anchor_weekday=1)
 
@@ -74,8 +75,8 @@ def test_service_create_subscription_manual_full(subscription_data_default,
     tzone = get_tzinfo(test_service_subscription_manual.billing_timezone)  # Получение тайм зоны подписки
     local_dtime = timezone.localtime(timezone.now(), tzone)                # Перевод в локальное время
     test_next_week = next_week(dtime=local_dtime,                          # Расчет следующей даты
-                                 weekday=test_schedule.anchor_weekday,
-                                 interval=test_schedule.period_interval)
+                               weekday=test_schedule.anchor_weekday,
+                               interval=test_schedule.period_interval)
     test_next_run_at = test_next_week.astimezone(timezone.UTC)              # Получаем UTC (для хранения)
 
     # Тест BillingSchedules
@@ -109,8 +110,8 @@ def test_service_create_subscription_verified_full(subscription_data_default,
     test_vp = verified_price_factory(provider=test_p, plan_name=verified_price_data_default["plan_name"],
                                      amount=verified_price_data_default["amount"])
     test_price_verified = PriceInput(verified_price=test_vp,
-                                     source="verified")
-    test_schedule = ScheduleInput(period_unit="week",
+                                     source=PriceHistorySource.VERIFIED)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK,
                                   period_interval=1,
                                   anchor_weekday=1)
 
@@ -170,24 +171,29 @@ def test_service_create_trial_subscription(subscription_data_default, user_defau
     - trial_ends_at проставлен
     - next_run_at пересчитан с учетом trial периода
     """
+    utc_tz = ZoneInfo('UTC')
+    now =datetime(2026, 1, 3, 0, 0, tzinfo=utc_tz)
+    started_at = datetime(2026, 1, 1, 0, 0, tzinfo=utc_tz)
+    trial_ends_at = datetime(2026, 1, 5, 0, 0, tzinfo=utc_tz)
+    recalc_next_billing_at = datetime(2026, 1, 12, 0, 0, tzinfo=utc_tz)
+
     test_u = user_default
-    test_price_manual = PriceInput(amount=Decimal('20.10'), currency="USD", source="manual")
-    test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=0,
-                                  trial_ends_at=datetime.fromisoformat('2026-01-05T00:00:00+00:00'))
+    test_price_manual = PriceInput(amount=Decimal('20.10'), currency="USD", source=PriceHistorySource.MANUAL)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=0,
+                                  trial_ends_at=trial_ends_at)
 
     test_service_subscription_trial = create_subscription_with_defaults(user=test_u,
                                                                         title=subscription_data_default['title'],
-                                                                        started_at=datetime.fromisoformat('2026-01-01T00:00:00+00:00'),
+                                                                        started_at=started_at,
                                                                         billing_timezone=subscription_data_default['billing_timezone'],
                                                                         price=test_price_manual,
                                                                         schedule=test_schedule,
-                                                                        now=datetime.fromisoformat('2026-01-03T00:00:00+00:00'))
+                                                                        now=now)
     test_billing_schedules = test_service_subscription_trial.billing_schedules.filter(is_current=True).first()
-    assert test_service_subscription_trial.status == "trial"
-    assert test_service_subscription_trial.next_billing_at == datetime.fromisoformat('2026-01-12T00:00:00+00:00')
-    assert test_billing_schedules.trial_ends_at == datetime.fromisoformat('2026-01-05T00:00:00+00:00')
-    assert test_billing_schedules.next_run_at == datetime.fromisoformat('2026-01-12T00:00:00+00:00')
-
+    assert test_service_subscription_trial.status == SubscriptionStatus.TRIAL
+    assert test_service_subscription_trial.next_billing_at == recalc_next_billing_at
+    assert test_billing_schedules.trial_ends_at == trial_ends_at
+    assert test_billing_schedules.next_run_at == recalc_next_billing_at
 
 @pytest.mark.django_db
 def test_service_create_delayed_subscription(subscription_data_default, user_default):
@@ -199,29 +205,33 @@ def test_service_create_delayed_subscription(subscription_data_default, user_def
     - next_run_at пересчитан с учетом DELAYED
     - проверка задания начального billing_timezone
     """
+    utc_tz = ZoneInfo('UTC')
+    now =datetime(2026, 1, 1, 0, 0, tzinfo=utc_tz)
+    started_at = datetime(2026, 1, 5, 0, 0, tzinfo=utc_tz)
+    recalc_next_billing_at = datetime(2026, 1, 12, 0, 0, tzinfo=utc_tz)
+
     test_u = user_default
-    test_price_manual = PriceInput(amount=Decimal('20.10'), currency="USD", source="manual")
-    test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=0)
-    now = datetime.fromisoformat('2026-01-01T00:00:00+00:00')
+    test_price_manual = PriceInput(amount=Decimal('20.10'), currency="USD", source=PriceHistorySource.MANUAL)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=0)
     test_service_subscription_delayed = create_subscription_with_defaults(user=test_u,
-                                                                        title=subscription_data_default['title'],
-                                                                        started_at=datetime.fromisoformat('2026-01-05T00:00:00+00:00'),
-                                                                        billing_timezone=None,
-                                                                        price=test_price_manual,
-                                                                        schedule=test_schedule,
-                                                                        now=now)
+                                                                          title=subscription_data_default['title'],
+                                                                          started_at=started_at,
+                                                                          billing_timezone=None,
+                                                                          price=test_price_manual,
+                                                                          schedule=test_schedule,
+                                                                          now=now)
     test_billing_schedules = test_service_subscription_delayed.billing_schedules.filter(is_current=True).first()
-    assert test_service_subscription_delayed.status == "delayed"
+    assert test_service_subscription_delayed.status == SubscriptionStatus.DELAYED
     assert test_service_subscription_delayed.started_at > now
-    assert test_service_subscription_delayed.next_billing_at == datetime.fromisoformat('2026-01-12T00:00:00+00:00')
-    assert test_billing_schedules.next_run_at == datetime.fromisoformat('2026-01-12T00:00:00+00:00')
+    assert test_service_subscription_delayed.next_billing_at == recalc_next_billing_at
+    assert test_billing_schedules.next_run_at == recalc_next_billing_at
     assert test_service_subscription_delayed.billing_timezone == "UTC"
 
 
 @pytest.mark.django_db
-def test_service_create_subscription_verified_or_manual(subscription_data_default,
-                                                        user_default, provider_default,
-                                                        verified_price_data_default, verified_price_factory):
+def test_service_create_subscription_raises_verified_or_manual(subscription_data_default,
+                                                               user_default, provider_default,
+                                                               verified_price_data_default, verified_price_factory):
     """
     Нельзя заполнять одновременно поля verified_price, amount, currency в PriceInput
     - Для Verified -> Заполнено verified_price. Пустые amount и currency.
@@ -234,9 +244,9 @@ def test_service_create_subscription_verified_or_manual(subscription_data_defaul
     test_price_verified = PriceInput(verified_price=test_vp,
                                      amount=Decimal('20.10'),
                                      currency="USD",
-                                     source="verified")
+                                     source=PriceHistorySource.VERIFIED)
 
-    test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=1)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=1)
 
     with pytest.raises(ValidationError):
         create_subscription_with_defaults(user=test_u, title="Тестовая подписка 1", provider=test_p,
@@ -244,15 +254,15 @@ def test_service_create_subscription_verified_or_manual(subscription_data_defaul
 
 
 @pytest.mark.django_db
-def test_service_create_subscription_anchor(user_default):
+def test_service_create_subscription_raises_anchor(user_default):
     """
     Для ScheduleInput обязательно заполнение anchor_* для недели и месяца
     - Week -> anchor_weekday
     - Month -> anchor_day
     """
     test_u = user_default
-    test_price = PriceInput(amount=Decimal('20.10'), currency="USD", source="manual")
-    test_schedule = ScheduleInput(period_unit="week")
+    test_price = PriceInput(amount=Decimal('20.10'), currency="USD", source=PriceHistorySource.MANUAL)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK)
 
     with pytest.raises(ValidationError):
         create_subscription_with_defaults(user=test_u, title="Тестовая подписка 1",
@@ -268,8 +278,8 @@ def test_service_subscription_update_fields(user_default, category_factory):  #
     - При изменении billing_timezone пересчитывается next_run_at и синхронизируется Subscription.next_billing_at.
     """
     test_u = user_default
-    test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source="manual")
-    test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=0)
+    test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source=PriceHistorySource.MANUAL)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=0)
 
     test_cat1 = category_factory(name="Категория1", slug="Cat1", sort_order=0)
     test_cat2 = category_factory(name="Категория2", slug="Cat2", sort_order=0)
@@ -317,8 +327,8 @@ def test_service_set_price_manual_closes_previous(subscription_data_default, use
     """
     # Создаем для Subscription + PriceHistory + BillingSchedule
     test_u = user_default
-    test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source="manual")
-    test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=1)
+    test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source=PriceHistorySource.MANUAL)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=1)
     test_sub_manual = create_subscription_with_defaults(user=test_u, title=subscription_data_default['title'],
                                                         price=test_price_manual, schedule=test_schedule)
     test_prev_price = test_sub_manual.price_history.first()
@@ -329,7 +339,7 @@ def test_service_set_price_manual_closes_previous(subscription_data_default, use
                                             currency="RUB",
                                             effective_from=timezone.now(),
                                             change_reason="Тестовое обновление цены",
-                                            source="manual")
+                                            source=PriceHistorySource.MANUAL)
 
     test_prev_price_update = PriceHistory.objects.get(pk=test_prev_price.pk)
     test_sub_manual_updated = test_prev_price_update.subscription
@@ -360,8 +370,8 @@ def test_service_set_price_verified_closes_previous(subscription_data_default,
     test_p = provider_default
     test_vp = verified_price_factory(provider=test_p, plan_name=verified_price_data_default["plan_name"],
                                      amount=verified_price_data_default["amount"])
-    test_price_verified = PriceInput(verified_price=test_vp, source="verified")
-    test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=1)
+    test_price_verified = PriceInput(verified_price=test_vp, source=PriceHistorySource.VERIFIED)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=1)
     test_sub_verified = create_subscription_with_defaults(user=test_u, title=subscription_data_default['title'],
                                                           provider=test_p, price=test_price_verified,
                                                           schedule=test_schedule)
@@ -375,7 +385,7 @@ def test_service_set_price_verified_closes_previous(subscription_data_default,
                                             verified_price=test_vp_new,
                                             effective_from=timezone.now(),
                                             change_reason="Тестовое обновление цены",
-                                            source="verified")
+                                            source=PriceHistorySource.VERIFIED)
 
     test_prev_price_update = PriceHistory.objects.get(pk=test_prev_price.pk)
     test_sub_manual_updated = test_prev_price_update.subscription
@@ -392,26 +402,257 @@ def test_service_set_price_verified_closes_previous(subscription_data_default,
 
 
 @pytest.mark.django_db
-def test_service_set_price_effective_from(subscription_data_default, user_default):
+@pytest.mark.parametrize("effective_from",
+                        [ pytest.param(lambda now: now + timedelta(days=10), id="future"),
+                          pytest.param(lambda now: now - timedelta(days=10), id="past")])
+def test_service_set_price_raises_effective_from(subscription_data_default, user_default, effective_from):
     """
     Проверка effective_from
     - обновления цены в будущем (effective_from больше текущей даты/времени)
     - обновления цены в прошлом (effective_from меньше текущей активной цены effective_from)
     """
     # Создаем для Subscription + PriceHistory + BillingSchedule
-    test_u = user_default
-    test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source="manual")
-    test_schedule = ScheduleInput(period_unit="week", period_interval=1, anchor_weekday=1)
-    test_sub_manual = create_subscription_with_defaults(user=test_u, title=subscription_data_default['title'],
+    test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source=PriceHistorySource.MANUAL)
+    test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=1)
+    test_sub_manual = create_subscription_with_defaults(user=user_default, title=subscription_data_default['title'],
                                                         price=test_price_manual, schedule=test_schedule)
-
+    now = timezone.now()
     with pytest.raises(ValueError):
         set_subscription_price(subscription=test_sub_manual, amount=Decimal('100.50'), currency="USD",
-                               effective_from=timezone.now()+timedelta(days=10), source="manual")
-
-    with pytest.raises(ValueError):
-        set_subscription_price(subscription=test_sub_manual, amount=Decimal('100.50'), currency="USD",
-                               effective_from=timezone.now()-timedelta(days=30), source="manual")
+                               effective_from=effective_from(now), source=PriceHistorySource.MANUAL)
 
 
 #--------------------------- Тесты сервиса по изменению состояния (статуса) ---------------------------
+@pytest.mark.django_db
+def test_status_transition_calculation_to_trial(subscription_default):
+    """
+    Попытка расчёта нового состояния для TRIAL
+    Статус TRIAL возможно установить только при создании
+    """
+    subscription_default.status = SubscriptionStatus.ACTIVE
+    with pytest.raises(ValueError):
+        status_transition_calculation(subscription=subscription_default,
+                                      status_new=SubscriptionStatus.TRIAL,
+                                      started_at=None,
+                                      now=timezone.now())
+
+
+@pytest.mark.django_db
+def test_status_transition_calculation_to_delayed(subscription_default, monkeypatch):
+    """
+    Расчёта нового состояния для статуса DELAYED (возможен только из EXPIRED)
+    - Валидация отключена для упрощения
+    - started_at > now
+    - status и started_at успешно установлены
+    - ended_at и next_billing_at отсутствуют
+    - resume_schedule активирован
+    - meta почищена
+    - close_schedule и recalculate_schedule отключены
+    """
+    now = timezone.now()
+    started_at = now + timedelta(days=10)
+
+    subscription_default.status = SubscriptionStatus.EXPIRED
+    subscription_default.started_at = None
+    subscription_default.ended_at = now
+    subscription_default.meta = {"paused_at": "old-value",
+                                "remaining_billing_seconds": 1000}
+
+    monkeypatch.setattr("apps.subscriptions.services.subscription_service.validator_subscription_status",
+                        lambda **kwargs: None)
+
+    test_status_calc = status_transition_calculation(subscription=subscription_default,
+                                                     status_new=SubscriptionStatus.DELAYED,
+                                                     started_at=started_at,
+                                                     now=now)
+
+    assert test_status_calc["status"] == SubscriptionStatus.DELAYED
+    assert test_status_calc["started_at"] == started_at
+    assert test_status_calc["ended_at"] is None and test_status_calc["next_billing_at"] is None
+    assert test_status_calc["resume_schedule"] is True
+    assert test_status_calc["close_schedule"] is False and test_status_calc["recalculate_schedule"] is False
+    assert test_status_calc["meta"]["paused_at"] is None
+    assert test_status_calc["meta"]["remaining_billing_seconds"] is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("old_status",
+                         [SubscriptionStatus.DELAYED,
+                          SubscriptionStatus.PAUSED,
+                          SubscriptionStatus.CANCELED,
+                          SubscriptionStatus.EXPIRED])
+def test_status_transition_calculation_to_active(subscription_default, old_status, monkeypatch):
+    """
+    Расчёта нового состояния для статуса ACTIVE:
+    1) DELAYED -> ACTIVE
+        - resume_schedule отключен
+        - recalculate_schedule активирован
+    2) PAUSED -> ACTIVE
+        - resume_schedule активирован
+        - recalculate_schedule отключен
+    3) CANCELED -> ACTIVE
+        - resume_schedule активирован
+        - recalculate_schedule отключен
+    4) EXPIRED -> ACTIVE
+        - started_at = now
+        - resume_schedule активирован
+        - recalculate_schedule отключен
+    - status успешно установлен
+    - ended_at отсутствует
+    - started_at <= now
+    - close_schedule отключен
+    - meta почищена
+    """
+    now = timezone.now()
+    started_at = now - timedelta(days=10)
+
+    subscription_default.status = old_status
+    subscription_default.started_at = started_at
+    subscription_default.meta = {"paused_at": "2026-01-01T00:00:00Z",
+                                 "remaining_billing_seconds": 1000}
+
+    monkeypatch.setattr("apps.subscriptions.services.subscription_service.validator_subscription_status",
+                        lambda **kwargs: None)
+
+    test_status_calc = status_transition_calculation(subscription=subscription_default,
+                                                     status_new=SubscriptionStatus.ACTIVE,
+                                                     started_at=None,
+                                                     now=now)
+
+    assert test_status_calc["status"] == SubscriptionStatus.ACTIVE
+    assert test_status_calc["started_at"] is not None
+    assert test_status_calc["ended_at"] is None
+    assert test_status_calc["close_schedule"] is False
+    assert test_status_calc["meta"]["paused_at"] is None
+    assert test_status_calc["meta"]["remaining_billing_seconds"] is None
+
+    if old_status == SubscriptionStatus.EXPIRED:
+        assert test_status_calc["started_at"] == now
+
+    if old_status in (SubscriptionStatus.PAUSED, SubscriptionStatus.CANCELED, SubscriptionStatus.EXPIRED):
+        assert test_status_calc["resume_schedule"] is True
+    else:
+        assert test_status_calc["resume_schedule"] is False
+
+    if old_status == SubscriptionStatus.DELAYED:
+        assert test_status_calc["recalculate_schedule"] is True
+    else:
+        assert test_status_calc["recalculate_schedule"] is False
+
+
+@pytest.mark.django_db
+def test_status_transition_calculation_to_paused(subscription_default, monkeypatch):
+    """
+    Расчёта нового состояния для статуса PAUSED:
+    - status успешно установлен
+    - ended_at и next_billing_at отсутствуют
+    - close_schedule активирован
+    - resume_schedule и recalculate_schedule отключены
+    - meta собрана
+    """
+    now = timezone.now()
+    subscription_default.status = SubscriptionStatus.ACTIVE
+    subscription_default.started_at = now - timedelta(days=10)
+    subscription_default.next_billing_at = now + timedelta(days=5)
+    subscription_default.meta = {"paused_at": None,
+                                 "remaining_billing_seconds": None}
+
+    monkeypatch.setattr("apps.subscriptions.services.subscription_service.validator_subscription_status",
+                        lambda **kwargs: None)
+
+    test_status_calc = status_transition_calculation(subscription=subscription_default,
+                                                     status_new=SubscriptionStatus.PAUSED,
+                                                     started_at=None,
+                                                     now=now)
+
+    assert test_status_calc["status"] == SubscriptionStatus.PAUSED
+    assert test_status_calc["ended_at"] is None and test_status_calc["next_billing_at"] is None
+    assert test_status_calc["close_schedule"] is True
+    assert test_status_calc["resume_schedule"] is False
+    assert test_status_calc["recalculate_schedule"] is False
+    assert test_status_calc["meta"]["paused_at"] is not None
+    assert test_status_calc["meta"]["remaining_billing_seconds"] is not None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("next_billing_at",
+                         [pytest.param(lambda now: now + timedelta(days=5), id="future"),
+                          pytest.param(lambda now: now, id="now"),
+                          pytest.param(lambda now: None, id="none")])
+def test_status_transition_calculation_to_canceled(subscription_default, next_billing_at, monkeypatch):
+    """
+    Расчёта нового состояния для статуса CANCELED:
+    1) next_billing_at = now
+        - установлен status EXPIRED
+        - ended_at = now
+    2) next_billing_at > now
+        - установлен status CANCELED
+        - ended_at = next_billing_at
+    - next_billing_at отчищен
+    - close_schedule активирован
+    - resume_schedule и recalculate_schedule отключены
+    - meta отчищен
+    """
+    now = timezone.now()
+    subscription_default.status = SubscriptionStatus.ACTIVE
+    subscription_default.started_at = now - timedelta(days=10)
+    subscription_default.next_billing_at = next_billing_at(now)
+    subscription_default.meta = {"paused_at": "2026-01-01T00:00:00Z",
+                                 "remaining_billing_seconds": 1000}
+
+    monkeypatch.setattr("apps.subscriptions.services.subscription_service.validator_subscription_status",
+                        lambda **kwargs: None)
+
+    test_status_calc = status_transition_calculation(subscription=subscription_default,
+                                                     status_new=SubscriptionStatus.CANCELED,
+                                                     started_at=None,
+                                                     now=now)
+
+    if  next_billing_at(now) is None or next_billing_at(now) == now:
+        assert test_status_calc["status"] == SubscriptionStatus.EXPIRED
+        assert test_status_calc["ended_at"] == now
+    else:
+        assert test_status_calc["status"] == SubscriptionStatus.CANCELED
+        assert test_status_calc["ended_at"] == next_billing_at(now)
+    assert test_status_calc["next_billing_at"] is None
+    assert test_status_calc["close_schedule"] is True
+    assert test_status_calc["resume_schedule"] is False
+    assert test_status_calc["recalculate_schedule"] is False
+    assert test_status_calc["meta"]["paused_at"] is None
+    assert test_status_calc["meta"]["remaining_billing_seconds"] is None
+
+
+@pytest.mark.django_db
+def test_status_transition_calculation_to_expired(subscription_default, monkeypatch):
+    """
+    Расчёта нового состояния для статуса EXPIRED:
+    - status успешно установлен
+    - ended_at = now
+    - next_billing_at отчищен
+    - close_schedule активирован
+    - resume_schedule и recalculate_schedule отключены
+    - meta отчищен
+    """
+    now = timezone.now()
+    subscription_default.status = SubscriptionStatus.ACTIVE
+    subscription_default.started_at = now - timedelta(days=10)
+    subscription_default.next_billing_at = now + timedelta(days=5)
+    subscription_default.meta = {"paused_at": "2026-01-01T00:00:00Z",
+                                 "remaining_billing_seconds": 1000}
+
+    monkeypatch.setattr("apps.subscriptions.services.subscription_service.validator_subscription_status",
+                        lambda **kwargs: None)
+
+    test_status_calc = status_transition_calculation(subscription=subscription_default,
+                                                     status_new=SubscriptionStatus.EXPIRED,
+                                                     started_at=None,
+                                                     now=now)
+
+    assert test_status_calc["status"] == SubscriptionStatus.EXPIRED
+    assert test_status_calc["ended_at"] == now
+    assert test_status_calc["next_billing_at"] is None
+    assert test_status_calc["close_schedule"] is True
+    assert test_status_calc["resume_schedule"] is False
+    assert test_status_calc["recalculate_schedule"] is False
+    assert test_status_calc["meta"]["paused_at"] is None
+    assert test_status_calc["meta"]["remaining_billing_seconds"] is None

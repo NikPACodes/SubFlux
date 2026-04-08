@@ -12,7 +12,7 @@ _CURRENCY_RE = re.compile(r'^[A-Z]{3}$')   # ISO 4217 (USD/EUR/RUB...)
 _COUNTRY_RE = re.compile(r'^[A-Z]{2}$')    # ISO 3166-1 alpha-2 (US, DE, RU, ...) или GLOBAL
 
 _ALLOWED_STATUS = {
-    SubscriptionStatus.TRIAL: (SubscriptionStatus.ACTIVE, SubscriptionStatus.CANCELED, SubscriptionStatus.EXPIRED),
+    SubscriptionStatus.TRIAL: (SubscriptionStatus.ACTIVE, SubscriptionStatus.EXPIRED),
     SubscriptionStatus.DELAYED: (SubscriptionStatus.ACTIVE,),
     SubscriptionStatus.ACTIVE: (SubscriptionStatus.PAUSED, SubscriptionStatus.CANCELED, SubscriptionStatus.EXPIRED),
     SubscriptionStatus.PAUSED: (SubscriptionStatus.ACTIVE, ),

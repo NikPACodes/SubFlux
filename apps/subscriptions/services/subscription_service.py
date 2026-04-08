@@ -135,12 +135,11 @@ def _clear_subscription_meta_pause(meta: dict) -> dict:
     return meta
 
 
-def _status_transition_calculation(*, subscription: Subscription, status_new: str, started_at, now):
+def status_transition_calculation(*, subscription: Subscription, status_new: str, started_at, now):
     """
     Доменная логика для расчёта нового состояния (статуса) Subscription.
     Возвращает dict с изменениями необходимыми для смены статуса.
     """
-    trial_ends_at = getattr(subscription, "trial_ends_at", None)
     meta = dict(subscription.meta or {})
 
     result = {
@@ -188,7 +187,7 @@ def _status_transition_calculation(*, subscription: Subscription, status_new: st
         meta.update(pause_meta)
 
     elif status_new == SubscriptionStatus.CANCELED:
-        if subscription.next_billing_at:
+        if subscription.next_billing_at and subscription.next_billing_at > now:
             result["status"] = SubscriptionStatus.CANCELED
             result["ended_at"] = subscription.next_billing_at
         else:
@@ -209,7 +208,6 @@ def _status_transition_calculation(*, subscription: Subscription, status_new: st
     validator_subscription_status(status=result["status"],
                                   started_at=result["started_at"],
                                   ended_at=result["ended_at"],
-                                  trial_ends_at=trial_ends_at,
                                   now=now)
 
     return result
@@ -492,8 +490,8 @@ def set_subscription_status(*, subscription: Subscription,
     validator_subscription_status_change(status_current=subscription.status, status_new=status_new)
 
     # Сбор перечня изменений
-    changes = _status_transition_calculation(subscription=subscription, status_new=status_new,
-                                             started_at=started_at, now=now)
+    changes = status_transition_calculation(subscription=subscription, status_new=status_new,
+                                            started_at=started_at, now=now)
 
     # Закрытие расписания
     if changes["close_schedule"]:
