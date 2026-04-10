@@ -9,8 +9,8 @@ class SubscriptionStatus(models.TextChoices):
     PAUSED = "paused", "Paused"
     CANCELED = "canceled", "Canceled"
     TRIAL = "trial", "Trial"
+    DELAYED = "delayed", "Delayed"
     EXPIRED = "expired", "Expired"
-
 
 class VerifiedPriceSource(models.TextChoices):
     """

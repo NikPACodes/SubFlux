@@ -68,15 +68,38 @@ Roadmap основан на реальном состоянии кода и не
 Цель: сосредоточить всю бизнес-логику в явных доменных сервисах.
 
 ### Subscription service
-- [X] _create_subscription_with_defaults_
-  - создание Subscription
-  - создание активной PriceHistory
-  - создание текущего BillingSchedule
-- [X] _set_subscription_price_
-  - закрытие предыдущей цены
-  - создание новой PriceHistory
-  - обновление денормализованной цены подписки
-- [X] Запрет будущих цен (effective_from > now)
+- [X] Создание Subscription (_create_subscription_with_defaults_)
+  - [X] создание Subscription
+  - [X] создание активной PriceHistory
+  - [X] создание текущего BillingSchedule
+- [X] Установка цены Subscription (_set_subscription_price_)
+  - [X] закрытие предыдущей цены
+  - [X] создание новой PriceHistory
+  - [X] обновление денормализованных полей по цене
+  - [X] запрет будущих цен (effective_from > now)
+- [X] Обновление простых полей Subscription (_update_subscription_data_)
+  - [X] обновление простых полей Subscription
+  - [X] при смене billing_timezone
+    - пересчет расписания (recalculate_schedule_next_run) 
+    - синхронизация поля next_billing_at (sync_subscription_next_billing)
+- [X] Обновление состояний Subscription (_set_subscription_status_)
+  - [X] валидация корректности статусов (_validator_subscription_status_)
+  - [X] валидация жизненного цикла Subscription (_validator_subscription_status_change_)
+  - [X] установка status и обновление дат started_at, ended_at, next_billing_at
+- [ ] Обновление провайдера Subscription
+  - [ ] валидация соответствия VerifiedPrice и Provider
+  - [ ] установка нового провайдера
+- [ ] Метод мягкого удаления данных
+  - [ ] проставления флага is_deleted на Subscription
+  - [ ] исключение данных из всех выборок
+  - [ ] создание записи в таблице на удаления
+- [ ] Метод восстановления удаленных данных
+  - [ ] исключение записи из таблицы на удаления
+  - [ ] очистка флага is_deleted на Subscription
+- [ ] Task для отчистки записей на удаление
+  - [ ] выборка всех записей по которым дата удаления равна текущей
+  - [ ] удаление из перечня
+  - [ ] рекурсивное удаление Subscription / PriceHistory / BillingSchedule
 
 ### Billing service
 - [X] _recalculate_schedule_next_run_
@@ -107,6 +130,7 @@ Roadmap основан на реальном состоянии кода и не
 - [X] Одно текущее BillingSchedule на подписку (is_current = true)
 - [X] XOR-ограничение для PriceHistory (manual vs verified)
 - [X] Одна активная версия VerifiedPrice на тарифный ключ
+- [ ] Ограничения VerifiedPrice в соответствии с Provider
 - [X] Частичные уникальные индексы (PostgreSQL)
 
 ---
@@ -122,9 +146,12 @@ Roadmap основан на реальном состоянии кода и не
 
 ### Тесты сервисного слоя
 - [X] Создание подписки (manual / verified)
+- [ ] Создание подписки (TRIAL / DELAYED / ACTIVE)
 - [X] Смена цены с корректным закрытием предыдущей (PriceHistory)
 - [ ] Смена цены с корректным закрытием предыдущей (VerifiedPrice)
 - [X] Обновление денормализованных полей Subscription
+- [ ] Корректная смена статусов Subscription
+- [ ] Корректное обновление простых полей Subscription
 - [X] Проверки некорректных сценариев
 
 ---
@@ -134,9 +161,14 @@ Roadmap основан на реальном состоянии кода и не
 Цель: предоставить минимальный, безопасный HTTP API поверх стабильного ядра.
 
 ### Subscriptions API
-- [ ] CRUD для подписок (изоляция по пользователю)
-- [ ] Создание подписки через сервисный слой
-- [ ] Отдельное действие смены цены (set_price)
+- [ ] Изоляция подписок по пользователю
+- [ ] Кастомные методы CRUD
+  - [X] Создание подписки через сервисный слой
+  - [X] Изменение простых полей подписки
+  - [ ] Отдельное действие смены статуса (состояния) подписки через сервисный слой + синхронизация дат и расписаний
+  - [ ] Отдельные действия pause / resume / cancel
+  - [X] Отдельное действие смены цены (set_price) + синхронизация полей
+  - [ ] Удаление (мягкое) подписки через сервисный слой
 - [ ] Фильтрация и сортировка
 
 ### VerifiedPrice (каталог)
@@ -145,12 +177,15 @@ Roadmap основан на реальном состоянии кода и не
 - [ ] Запрет любых изменений через пользовательский API
 
 ### Providers и Categories
-- [ ] Read-only доступ для всех
-- [ ] Admin-only операции изменения
+- [X] Read-only доступ для всех
+- [X] Admin-only операции изменения
 
 ### Безопасность
-- [ ] Permissions на уровне ViewSet
-- [ ] Изоляция пользовательских данных
+- [ ] Permissions на уровне ViewSet 
+  - [ ] IsAuthenticated 
+  - [ ] IsAdminUser
+  - [ ] IsOwner
+- [ ] Изоляция пользовательских данных на уровне queryset
 - [ ] Базовые проверки доступа
 
 ### Тесты API

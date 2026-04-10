@@ -35,9 +35,9 @@ class Subscription(models.Model):
                               default=SubscriptionStatus.ACTIVE, db_index=True)
 
     # Дата начала подписки
-    started_at = models.DateField(blank=True, null=True)
+    started_at = models.DateTimeField(blank=True, null=True)
     # Дата окончания/отмены подписки
-    ended_at = models.DateField(blank=True, null=True)
+    ended_at = models.DateTimeField(blank=True, null=True)
 
     # Метод оплаты (текстовое поле для удобства пользователя, НЕ содержит секретных данных
     # Прим: "МИР **** 1234", "PayPal", "VISA" ...
@@ -61,16 +61,21 @@ class Subscription(models.Model):
 
     # IANA timezone ("Asia/Yekaterinburg", "Europe/Moscow"...)
     # Используется дял корректного расчета дат списания с учетом локального времени подписки
-    billing_timezone = models.CharField(max_length=64, blank=True, null=True, validators=[validator_timezone])
+    billing_timezone = models.CharField(max_length=64, blank=False, null=False, default="UTC", validators=[validator_timezone])
 
     # Факт последнего списания
     last_billed_at = models.DateTimeField(blank=True, null=True)
 
+    meta = models.JSONField(default=dict, blank=True)
+
+    is_deleted = models.BooleanField(default=False)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "subscriptions"
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
         indexes = [
             # Индекс для ускорения поиска подписок пользователя по статусу
             models.Index(fields=["user", "status"]),

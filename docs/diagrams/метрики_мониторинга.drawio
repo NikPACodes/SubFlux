@@ -1,0 +1,40 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.2.5 Chrome/138.0.7204.251 Electron/37.6.1 Safari/537.36" version="28.2.5">
+  <diagram name="Page-1" id="HjqOV8enLyyoe-YOvId_">
+    <mxGraphModel dx="2025" dy="4124" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-1" value="&lt;h2&gt;Метрики для мониторинга&lt;/h2&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;gradientColor=#7ea6e0;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="-810" y="-2310" width="800" height="380" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-2" value="&lt;span style=&quot;font-weight: 400;&quot;&gt;Качество сервиса&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;gradientColor=#b3b3b3;strokeColor=#666666;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-1">
+          <mxGeometry x="41.5" y="51" width="728.5" height="149" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-3" value="Доставка уведомлений" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-2">
+          <mxGeometry x="47.5" y="45.5" width="162.5" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-4" value="Удовлетворенность пользователей" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-2">
+          <mxGeometry x="477.5" y="45.5" width="220" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-5" value="Точность аналитики" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-2">
+          <mxGeometry x="253.5" y="45.5" width="182.5" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-6" value="Количество активных пользователей" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-2">
+          <mxGeometry x="477.5" y="100" width="220" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-7" value="&lt;span style=&quot;font-weight: 400;&quot;&gt;Технические метрики&lt;/span&gt;" style="swimlane;whiteSpace=wrap;html=1;fillColor=#f5f5f5;gradientColor=#b3b3b3;strokeColor=#666666;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-1">
+          <mxGeometry x="90.25" y="231" width="650" height="119" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-8" value="Время ответа API" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-7">
+          <mxGeometry x="36.5" y="52" width="137.5" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-9" value="Очередь Celery задач" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-7">
+          <mxGeometry x="222" y="52" width="170" height="39" as="geometry" />
+        </mxCell>
+        <mxCell id="hwvYnfDzPCtM3NGI3h23-10" value="Нагрузка на БД" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="hwvYnfDzPCtM3NGI3h23-7">
+          <mxGeometry x="440" y="52" width="180" height="39" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

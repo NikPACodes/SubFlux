@@ -1,30 +1,42 @@
 from django.core.validators import ValidationError
+from django.utils import timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import re
 from pycountry import currencies, countries
 from decimal import Decimal
 from typing import Optional
 
-from utils.enums import PriceHistorySource, PeriodUnit
+from utils.enums import PriceHistorySource, PeriodUnit, SubscriptionStatus
 
 _CURRENCY_RE = re.compile(r'^[A-Z]{3}$')   # ISO 4217 (USD/EUR/RUB...)
 _COUNTRY_RE = re.compile(r'^[A-Z]{2}$')    # ISO 3166-1 alpha-2 (US, DE, RU, ...) или GLOBAL
 
+_ALLOWED_STATUS = {
+    SubscriptionStatus.TRIAL: (SubscriptionStatus.ACTIVE, SubscriptionStatus.EXPIRED),
+    SubscriptionStatus.DELAYED: (SubscriptionStatus.ACTIVE,),
+    SubscriptionStatus.ACTIVE: (SubscriptionStatus.PAUSED, SubscriptionStatus.CANCELED, SubscriptionStatus.EXPIRED),
+    SubscriptionStatus.PAUSED: (SubscriptionStatus.ACTIVE, ),
+    SubscriptionStatus.CANCELED: (SubscriptionStatus.EXPIRED, SubscriptionStatus.ACTIVE),
+    SubscriptionStatus.EXPIRED: (SubscriptionStatus.DELAYED, SubscriptionStatus.ACTIVE),
+}
 
-def validator_timezone(value: str):
+
+def validator_timezone(value: str, allow_empty: bool = False) -> None:
     """
     Валидация IANA timezone ("Asia/Yekaterinburg", "Europe/Moscow"...)
     """
     if value in (None, ''):
-        return
+        if allow_empty:
+            return
+        raise ValidationError(f'Timezone не может быть пустой')
 
     try:
         ZoneInfo(value)
     except ZoneInfoNotFoundError as e:
-        raise ValidationError(f'Timezone не существует: {value}') from e
+        raise ValidationError(f'Некорректная IANA timezone: {value}') from e
 
 
-def validator_currency(value: str):
+def validator_currency(value: str) -> None:
     """
     Валидация валюты ISO 4217 (USD/EUR/RUB...)
     """
@@ -39,7 +51,7 @@ def validator_currency(value: str):
         raise ValidationError(f'Валюта не найдена: {value}')
 
 
-def validator_region(value: str):
+def validator_region(value: str) -> None:
     """
     Валидация региона ISO 3166-1 alpha-2 (US, DE, RU, ...) или GLOBAL
     """
@@ -57,8 +69,8 @@ def validator_region(value: str):
         raise ValidationError(f'Регион не найден: {value}')
 
 
-def validator_price_history_source(source: str, verified_price = None,
-                                   amount: Optional[Decimal] = None, currency: Optional[str] = None):
+def validator_price_history_source(*, source: str, verified_price = None,
+                                      amount: Optional[Decimal] = None, currency: Optional[str] = None) -> None:
     """
     Валидация корректности режимов источника цены для PriceHistory
     Manual: Обязательное заполнение полей -> amount, current. Поле verified_price не учитывается.
@@ -82,8 +94,8 @@ def validator_price_history_source(source: str, verified_price = None,
         raise ValidationError("Некорректный источник цены (price.source). Поддерживаются verified/manual режимы")
 
 
-def validate_billing_schedule_params(*, period_unit: str, period_interval: int, anchor_day: Optional[int],
-                                        anchor_weekday: Optional[int], grace_days: int):
+def validator_billing_schedule_params(*, period_unit: str, period_interval: int, anchor_day: Optional[int],
+                                         anchor_weekday: Optional[int], grace_days: int) -> None:
     """
     Валидация расписания “по смыслу”.
 
@@ -104,3 +116,96 @@ def validate_billing_schedule_params(*, period_unit: str, period_interval: int, 
         raise ValidationError("anchor_day является обязательным для интервала (period_unit) по месяцам (MONTH)")
     elif period_unit == PeriodUnit.WEEK and anchor_weekday is None:
         raise ValidationError("anchor_weekday является обязательным для интервала (period_unit) по неделям (WEEK)")
+
+
+def validator_subscription_status(*, status: str, started_at, ended_at = None, trial_ends_at = None, now = None) -> None:
+    """
+    Валидация состояний подписки
+
+    TRIAL -> Пробный период
+        * started_at <= Текущей даты
+        * ended_at - Пуст
+        * trial_ends_at > Текущей даты
+    DELAYED -> Отложенное начало подписки
+        * started_at > Текущей даты
+        * ended_at - Пуст
+    ACTIVE -> Активная подписка
+        * started_at <= Текущей даты
+        * ended_at - Пуст
+    PAUSED -> Приостановлена
+        * started_at <= Текущей даты
+        * ended_at - Пуст
+    CANCELED -> Отменена, но ещё активна
+        * started_at <= Текущей даты
+        * ended_at > Текущей даты
+    EXPIRED -> Отменена
+        * started_at <= ended_at
+        * ended_at <= Текущей даты
+    """
+    now = now or timezone.now()
+
+    if started_at is None:
+        raise ValidationError("Дата начала (started_at) не может быть пустой")
+
+    if started_at > now and status != SubscriptionStatus.DELAYED:
+        raise ValidationError("Дата начала (started_at) не должна превышать текущую")
+
+    if ended_at is not None and started_at > ended_at:
+        raise ValidationError("Дата начала (started_at) не может превышать дату окончания (ended_at)")
+
+
+    if status == SubscriptionStatus.TRIAL:
+        if ended_at is not None:
+            raise ValidationError("TRIAL: Дата окончания (ended_at) должна быть пустой")
+        if trial_ends_at is None:
+            raise ValidationError("TRIAL: Дата окончания пробного периода (trial_ends_at) не может быть пустой")
+        if trial_ends_at <= now:
+            raise ValidationError("TRIAL: Дата окончания пробного периода (trial_ends_at) должна быть больше текущей даты")
+
+    elif status == SubscriptionStatus.DELAYED:
+        if started_at <= now:
+            raise ValidationError("DELAYED: Дата начала (started_at) должна быть больше текущей даты")
+        if ended_at is not None:
+            raise ValidationError("DELAYED: Дата окончания (ended_at) должна быть пустой")
+
+    elif status == SubscriptionStatus.ACTIVE:
+        if ended_at is not None:
+            raise ValidationError("ACTIVE: Дата окончания (ended_at) должна быть пустой")
+
+    elif status == SubscriptionStatus.PAUSED:
+        if ended_at is not None:
+            raise ValidationError("PAUSED: Дата окончания (ended_at) должна быть пустой")
+
+    elif status == SubscriptionStatus.CANCELED:
+        if ended_at is None:
+            raise ValidationError("CANCELED: Дата окончания (ended_at) обязательна к заполнению")
+        if ended_at <= now:
+            raise ValidationError("CANCELED: Дата окончания (ended_at) должна быть больше текущей даты")
+
+    elif status == SubscriptionStatus.EXPIRED:
+        if ended_at is None:
+            raise ValidationError("EXPIRED: Дата окончания (ended_at) обязательна к заполнению")
+        if ended_at > now:
+            raise ValidationError("EXPIRED: Дата окончания (ended_at) не может превышать текущую")
+
+    else:
+        raise ValidationError("Некорректный статус подписки")
+
+
+def validator_subscription_status_change(status_current: str, status_new: str) -> None:
+    """
+    Валидация смены статусов в подписке
+    (для корректного соблюдения жизненного цикла подписки)
+
+    Жизненный цикл подписки:
+    TRIAL   --> ACTIVE / EXPIRED
+    DELAYED --> ACTIVE --> PAUSED   --> ACTIVE
+                       --> CANCELED --> EXPIRED / ACTIVE
+                       --> EXPIRED  --> DELAYED / ACTIVE
+    """
+    if status_current == status_new:
+        return
+
+    allowed_status = _ALLOWED_STATUS.get(status_current)
+    if allowed_status is None or status_new not in allowed_status:
+        raise ValidationError(f"Переход из статуса {status_current} в статус {status_new} запрещён")

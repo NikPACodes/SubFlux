@@ -47,6 +47,8 @@ class BillingSchedule(models.Model):
 
     class Meta:
         db_table = "billing_schedules"
+        verbose_name = 'График списания'
+        verbose_name_plural = 'График списаний'
         indexes = [
             # Быстрое получение актуального расписания
             models.Index(fields=["subscription", "is_current"]),
