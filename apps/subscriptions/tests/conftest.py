@@ -1,6 +1,7 @@
 import pytest
 from decimal import Decimal
 from typing import Optional
+from types import SimpleNamespace
 from django.utils import timezone
 import datetime
 from apps.subscriptions.models import Provider, VerifiedPrice, Category, Subscription, BillingSchedule
@@ -152,7 +153,7 @@ def subscription_factory(db):
     return _create_subscription
 
 
-@pytest.fixture
+@pytest.fixture()
 def schedule_factory(db):
     """
     Фабрика создания расписаний для тестов:
@@ -167,3 +168,88 @@ def schedule_factory(db):
                                               anchor_weekday=anchor_weekday, trial_ends_at=trial_ends_at,
                                               grace_days=grace_days, next_run_at=next_run_at, is_current=is_current)
     return _create_schedule
+
+
+#--------- Заглушки monkeypatch ---------
+@pytest.fixture()
+def monkeypatch_status_transition_calculation(monkeypatch):
+    """
+    Заглушка через фабрику (для передачи параметра) status_transition_calculation
+    """
+    def _monkeypatch_status_transition_calculation(result):
+        monkeypatch.setattr("apps.subscriptions.services.subscription_service.status_transition_calculation",
+                            lambda **kwargs: result)
+        return result
+    return _monkeypatch_status_transition_calculation
+
+
+@pytest.fixture
+def monkeypatch_create_schedule_from_remaining_period(monkeypatch):
+    """
+    Заглушка через фабрику (для передачи параметра) create_schedule_from_remaining_period
+    """
+    def _monkeypatch_create_schedule_from_remaining_period(next_run_at):
+        state = {
+            "called": False,
+            "sub_id": None,
+            "from_dt": None,
+            "remaining_billing_seconds": None,
+        }
+
+        def fake_create_schedule_from_remaining_period(*, sub, remaining_billing_seconds, from_dt):
+            state["called"] = True
+            state["sub_id"] = sub.id
+            state["from_dt"] = from_dt
+            state["remaining_billing_seconds"] = remaining_billing_seconds
+            return SimpleNamespace(next_run_at=next_run_at)
+
+        monkeypatch.setattr("apps.subscriptions.services.subscription_service.create_schedule_from_remaining_period",
+                            fake_create_schedule_from_remaining_period)
+        return state
+    return _monkeypatch_create_schedule_from_remaining_period
+
+
+@pytest.fixture
+def monkeypatch_create_schedule_from_existing(monkeypatch):
+    """
+    Заглушка через фабрику (для передачи параметра) create_schedule_from_existing
+    """
+    def _monkeypatch_create_schedule_from_existing(next_run_at):
+        state = {
+            "called": False,
+            "sub_id": None,
+            "from_dt": None,
+        }
+
+        def fake_create_schedule_from_existing(*, sub, from_dt):
+            state["called"] = True
+            state["sub_id"] = sub.id
+            state["from_dt"] = from_dt
+            return SimpleNamespace(next_run_at=next_run_at)
+
+        monkeypatch.setattr("apps.subscriptions.services.subscription_service.create_schedule_from_existing",
+                            fake_create_schedule_from_existing)
+        return state
+    return _monkeypatch_create_schedule_from_existing
+
+
+@pytest.fixture
+def monkeypatch_close_current_schedule(monkeypatch):
+    """
+    Заглушка через фабрику close_current_schedule
+    """
+    def _monkeypatch_close_current_schedule():
+        state = {
+            "called": False,
+            "sub_id": None,
+        }
+        def fake_close_current_schedule(sub):
+            state["called"] = True
+            state["sub_id"] = sub.id
+            return None
+
+        monkeypatch.setattr("apps.subscriptions.services.subscription_service.close_current_schedule",
+                            fake_close_current_schedule)
+
+        return state
+    return _monkeypatch_close_current_schedule

@@ -65,7 +65,7 @@ def test_get_last_schedule_none(subscription_default):
 
 #--------------------------- Тесты закрытия расписания ---------------------------
 @pytest.mark.django_db
-def test_close_current_schedule_marks_current_as_not_current(subscription_default, schedule_factory):
+def test_close_current_schedule(subscription_default, schedule_factory):
     current = schedule_factory(subscription=subscription_default, is_current=True)
     test_close_sched = close_current_schedule(subscription_default)
     current.refresh_from_db()
