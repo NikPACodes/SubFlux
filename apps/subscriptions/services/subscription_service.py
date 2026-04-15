@@ -15,6 +15,7 @@ from typing import Optional
 
 from django.db import transaction
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from apps.subscriptions.models import (BillingSchedule,
                                        PriceHistory,
@@ -154,8 +155,8 @@ def status_transition_calculation(*, subscription: Subscription, status_new: str
     }
 
     if status_new == SubscriptionStatus.TRIAL:
-        raise ValueError("TRIAL нельзя устанавливать через оркестратор статуса. "
-                         "TRIAL допускается только при создании подписки.")
+        raise ValidationError("TRIAL нельзя устанавливать через оркестратор статуса. "
+                              "TRIAL допускается только при создании подписки.")
 
     elif status_new == SubscriptionStatus.DELAYED:
         result["status"] = SubscriptionStatus.DELAYED
@@ -338,13 +339,13 @@ def create_subscription_with_defaults(*, user,
 
 @transaction.atomic
 def update_subscription_data(*, subscription: Subscription,
-                                title: str,
+                                title: Optional[str] = None,
                                 description: Optional[str] = None,
                                 category: Optional[Category] = None,
                                 billing_timezone: Optional[str] = None,
                                 payment_method_label: Optional[str] = None,
                                 owner_note: Optional[str] = None,
-                                is_shared: bool = None) -> Subscription:
+                                is_shared: Optional[bool] = None) -> Subscription:
     """
     Обновление простых полей подписки
 
@@ -356,7 +357,9 @@ def update_subscription_data(*, subscription: Subscription,
     update_fields = []
 
     # Обновление простых полей
-    if title:
+    if title is not None:
+        if title == "":
+            raise ValidationError("Title не может быть пустым")
         sub_lock.title = title
         update_fields.append('title')
 
@@ -372,7 +375,7 @@ def update_subscription_data(*, subscription: Subscription,
         sub_lock.owner_note = owner_note
         update_fields.append('owner_note')
 
-    if sub_lock.is_shared is not None:
+    if is_shared is not None:
         sub_lock.is_shared = is_shared
         update_fields.append('is_shared')
 
@@ -424,7 +427,7 @@ def set_subscription_price(*, subscription: Subscription,
     # Момент вступления цены в силу
     now = now or timezone.now()
     if effective_from and effective_from > now:
-        raise ValueError("Значение effective_from в будущем не поддерживается.")
+        raise ValidationError("Значение effective_from в будущем не поддерживается.")
     elif not effective_from:
         effective_from = now
 
@@ -440,7 +443,7 @@ def set_subscription_price(*, subscription: Subscription,
         prev_price.effective_to = effective_from
         prev_price.save(update_fields=["effective_to"])
     elif prev_price and prev_price.effective_from >= effective_from:
-        raise ValueError("Значение effective_from должно быть больше текущей активной цены effective_from.")
+        raise ValidationError("Значение effective_from должно быть больше текущей активной цены effective_from.")
 
     if source == PriceHistorySource.VERIFIED:
         new_price = PriceHistory.objects.create(subscription=subscription,

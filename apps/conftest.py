@@ -51,7 +51,7 @@ def auth_client_default(api_client, user_default):
     """
     Авторизованный базовый пользователь
     """
-    api_client.force_authenticate(user_default)
+    api_client.force_authenticate(user=user_default)
     return api_client
 
 @pytest.fixture()
@@ -62,7 +62,6 @@ def auth_client_factory():
     """
     def _auth_client_factory(user):
         client = APIClient()
-        client.force_authenticate(user_default)
+        client.force_authenticate(user=user)
         return client
     return _auth_client_factory
-

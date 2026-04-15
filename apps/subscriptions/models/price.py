@@ -1,5 +1,3 @@
-from dataclasses import field
-
 from django.db import models
 from django.db.models import Q, F
 from django.core.validators import MinValueValidator
@@ -147,7 +145,7 @@ class PriceHistory(models.Model):
         ]
 
     def __str__(self):
-        if self.source.VERIFIED:
-            return f"Sub_ID {self.subscription_id} -> VerifiedPrice {self.verified_price_amount} {self.verified_price_currency}"
+        if self.source == PriceHistorySource.VERIFIED and self.verified_price_id:
+            return f"Sub_ID {self.subscription_id} -> VerifiedPrice {self.verified_price.amount} {self.verified_price.currency}"
         else:
             return f"Sub_ID {self.subscription_id} -> {self.amount} {self.currency}"

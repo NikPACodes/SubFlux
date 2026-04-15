@@ -10,6 +10,7 @@ from datetime import timedelta
 from django.utils import timezone
 from apps.subscriptions.services.subscription_service import status_transition_calculation, set_subscription_status
 from utils.enums import SubscriptionStatus
+from django.core.exceptions import ValidationError
 
 pytestmark = [pytest.mark.lifecycle_status]
 
@@ -20,7 +21,7 @@ def test_status_transition_calculation_to_trial(subscription_default):
     Статус TRIAL возможно установить только при создании
     """
     subscription_default.status = SubscriptionStatus.ACTIVE
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         status_transition_calculation(subscription=subscription_default,
                                       status_new=SubscriptionStatus.TRIAL,
                                       started_at=None,

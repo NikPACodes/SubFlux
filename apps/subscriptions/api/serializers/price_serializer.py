@@ -1,8 +1,9 @@
 from rest_framework import serializers
-
 from apps.subscriptions.models import VerifiedPrice
 from utils.enums import PriceHistorySource
 from utils.validators import validator_price_history_source, validator_currency
+from django.core.exceptions import ValidationError
+from utils.api.errors import as_drf_validation_error
 
 
 class PriceInputSerializer(serializers.Serializer):
@@ -41,8 +42,8 @@ class PriceInputSerializer(serializers.Serializer):
                 amount=attrs.get('amount'),
                 currency=attrs.get('currency'),
             )
-        except ValueError as e:
-            raise serializers.ValidationError(str(e))
+        except ValidationError as exc:
+            raise as_drf_validation_error(exc)
 
         # Нормализация структуры (для корректного создания Subscription)
         attrs['verified_price'] = verified_price

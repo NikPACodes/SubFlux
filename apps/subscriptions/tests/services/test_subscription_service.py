@@ -3,7 +3,7 @@ from decimal import Decimal
 from datetime import timedelta, datetime
 from zoneinfo import ZoneInfo
 from django.utils import timezone
-from django.core.validators import ValidationError
+from django.core.exceptions import ValidationError
 from apps.subscriptions.models import PriceHistory
 from apps.subscriptions.services.subscription_service import (PriceInput, ScheduleInput,
                                                               create_subscription_with_defaults,
@@ -415,6 +415,6 @@ def test_service_set_price_raises_effective_from(subscription_data_default, user
     test_sub_manual = create_subscription_with_defaults(user=user_default, title=subscription_data_default['title'],
                                                         price=test_price_manual, schedule=test_schedule)
     now = timezone.now()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValidationError):
         set_subscription_price(subscription=test_sub_manual, amount=Decimal('100.50'), currency="USD",
                                effective_from=effective_from(now), source=PriceHistorySource.MANUAL)

@@ -21,6 +21,9 @@ class SubscriptionViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get_serializer_class(self):
+        """
+        Все serializers должны возвращать Subscription
+        """
         if self.action in ['list', 'retrieve']:
             return SubscriptionReadSerializer
 
