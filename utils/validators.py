@@ -1,4 +1,4 @@
-from django.core.validators import ValidationError
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import re

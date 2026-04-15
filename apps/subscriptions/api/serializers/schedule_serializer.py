@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from utils.enums import PeriodUnit
 from utils.validators import validator_billing_schedule_params
+from django.core.exceptions import ValidationError
+from utils.api.errors import as_drf_validation_error
 
 
 class ScheduleInputSerializer(serializers.Serializer):
@@ -24,7 +26,7 @@ class ScheduleInputSerializer(serializers.Serializer):
                 anchor_weekday=attrs.get('anchor_weekday'),
                 grace_days=attrs.get('grace_days'),
             )
-        except ValueError as e:
-            raise serializers.ValidationError(str(e))
+        except ValidationError as exc:
+            raise as_drf_validation_error(exc)
 
         return  attrs

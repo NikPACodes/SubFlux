@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from apps.subscriptions.models import Subscription
 from utils.enums import SubscriptionStatus
+from utils.api.errors import call_service
 from .price_serializer import PriceInputSerializer
 from .schedule_serializer import ScheduleInputSerializer
 from apps.subscriptions.models import Provider, Category
@@ -99,19 +100,22 @@ class SubscriptionCreateSerializer(serializers.Serializer):
         price_input = PriceInput(**price_data)
         schedule_input = ScheduleInput(**schedule_data)
 
-        return create_subscription_with_defaults(user = request.user,
-                                                 title = validated_data.get('title'),
-                                                 description = validated_data.get('description'),
-                                                 provider = provider,
-                                                 category = category,
-                                                 started_at = validated_data.get('started_at'),
-                                                 ended_at = validated_data.get('ended_at'),
-                                                 billing_timezone  = validated_data.get('billing_timezone'),
-                                                 payment_method_label = validated_data.get('payment_method_label'),
-                                                 owner_note = validated_data.get('owner_note'),
-                                                 is_shared = validated_data.get('is_shared', False),
-                                                 price = price_input,
-                                                 schedule = schedule_input,)
+        return call_service(
+            create_subscription_with_defaults,
+            user = request.user,
+            title = validated_data.get('title'),
+            description = validated_data.get('description'),
+            provider = provider,
+            category = category,
+            started_at = validated_data.get('started_at'),
+            ended_at = validated_data.get('ended_at'),
+            billing_timezone  = validated_data.get('billing_timezone'),
+            payment_method_label = validated_data.get('payment_method_label'),
+            owner_note = validated_data.get('owner_note'),
+            is_shared = validated_data.get('is_shared', False),
+            price = price_input,
+            schedule = schedule_input,
+        )
 
 
 #------------------------------------ UPDATE Subscription ------------------------------------
@@ -145,9 +149,12 @@ class SubscriptionUpdateSerializer(serializers.Serializer):
             category_id = validated_data.pop('category_id')
             category = Category.objects.get(pk=category_id) if category_id else None
 
-        return update_subscription_data(subscription=instance,
-                                        category=category,
-                                        **validated_data)
+        return call_service(
+            update_subscription_data,
+            subscription=instance,
+            category=category,
+            **validated_data
+        )
 
 
 #------------------------------------ SET Price Subscription ------------------------------------
@@ -155,16 +162,21 @@ class SubscriptionSetPriceSerializer(PriceInputSerializer):
     """
     Сериализатор для сохранения цены в подписке
     """
-
     def save(self, subscription):
         price_input = PriceInput(**self.validated_data)
-        return set_subscription_price(subscription=subscription,
-                                      verified_price=price_input.verified_price,
-                                      amount=price_input.amount,
-                                      currency=price_input.currency,
-                                      effective_from=price_input.effective_from,
-                                      change_reason=price_input.change_reason,
-                                      source=price_input.source)
+
+        new_price = call_service(
+            set_subscription_price,
+            subscription=subscription,
+            verified_price=price_input.verified_price,
+            amount=price_input.amount,
+            currency=price_input.currency,
+            effective_from=price_input.effective_from,
+            change_reason=price_input.change_reason,
+            source=price_input.source
+        )
+
+        return new_price.subscription
 
 
 #------------------------------------ SET Provider Subscription ------------------------------------
@@ -182,7 +194,6 @@ class SubscriptionSetStatusSerializer(serializers.Serializer):
     """
     status = serializers.ChoiceField(required=True, choices=SubscriptionStatus)
     started_at = serializers.DateTimeField(required=False, allow_null=True)
-    # ended_at = serializers.DateTimeField(required=False, allow_null=True)
 
     def validate(self, attrs):
         status = attrs.get('status')
@@ -203,9 +214,12 @@ class SubscriptionSetStatusSerializer(serializers.Serializer):
         return attrs
 
     def save(self, subscription):
-        return set_subscription_status(subscription=subscription,
-                                       status_new=self.validated_data.get('status'),
-                                       started_at=self.validated_data.get('started_at'))
+        return call_service(
+            set_subscription_status,
+            subscription=subscription,
+            status_new=self.validated_data.get('status'),
+            started_at=self.validated_data.get('started_at')
+        )
 
 
 #------------------------------------  Cancel Subscription ------------------------------------
@@ -225,5 +239,8 @@ class SubscriptionCancelSerializer(serializers.Serializer):
         else:
             raise serializers.ValidationError(f"Неизвестный режим {cancel_mode}")
 
-        return set_subscription_status(subscription=subscription,
-                                       status_new=cancel_status)
+        return call_service(
+            set_subscription_status,
+            subscription=subscription,
+            status_new=cancel_status
+        )
