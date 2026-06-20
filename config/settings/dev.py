@@ -1,5 +1,5 @@
 """
-Dev - настроек для локальной разработке
+Dev - настройки для локальной разработки
 """
 from dotenv import load_dotenv
 from pathlib import Path

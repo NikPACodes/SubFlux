@@ -3,7 +3,7 @@ services:
     image: postgres:16
     container_name: subflux-postgres-dev
     environment:
-      POSTGRES_DB: subflux_bd
+      POSTGRES_DB: subflux_db
       POSTGRES_USER: subflux
       POSTGRES_PASSWORD: subflux
     ports:
