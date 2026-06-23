@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "subflux"
+version = "0.1.0"
+description = "API-first Django service for subscription tracking, billing history, and expense analytics."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [
+  { name = "Nikolay Petukhov (NikPACodes)" }
+]
+
+dependencies = [
+  "Django>=6.0,<6.1",
+  "djangorestframework>=3.16,<3.17",
+  "drf-spectacular>=0.29,<0.30",
+  "django-phonenumber-field>=8.4,<9.0",
+  "phonenumbers>=9.0,<10.0",
+  "psycopg[binary]>=3.3,<3.4",
+  "python-dotenv>=1.2,<2.0",
+  "pycountry>=24.6,<25.0",
+  "PyYAML>=6.0,<7.0",
+]
+
+
+[tool.setuptools]
+packages = []
+
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.0,<10.0",
+  "pytest-django>=4.11,<5.0",
+  "pytest-mock>=3.15,<3.16",
+  "django-debug-toolbar>=6.2,<7.0",
+  "django-stubs>=6.0,<6.1",
+  "djangorestframework-stubs>=3.17,<4.0",
+]
+
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+testpaths = ["apps"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "api: Тесты API",
+    "lifecycle_status: Тесты расчета и смены состояний (статусов)"
+  ]

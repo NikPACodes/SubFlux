@@ -8,28 +8,30 @@ on:
 
 jobs:
   tests:
+    name: SubFlux tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     services:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: subflux_test
+          POSTGRES_DB: subflux_db
           POSTGRES_USER: subflux
           POSTGRES_PASSWORD: subflux
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U subflux -d subflux_test"
+          --health-cmd="pg_isready -U subflux -d subflux_db"
           --health-interval=5s
           --health-timeout=5s
-          --health-retries=20
+          --health-retries=10
 
     env:
       PYTHONUNBUFFERED: "1"
       DJANGO_SETTINGS_MODULE: config.settings.test
       
-      POSTGRES_NAME: subflux_test
+      POSTGRES_NAME: subflux_db
       POSTGRES_USER: subflux
       POSTGRES_PASSWORD: subflux
       POSTGRES_HOST: 127.0.0.1
@@ -37,19 +39,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@6
         with:
           python-version: "3.12"
-          cache: "pip"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-django
+          pip install -e ".[dev]"
 
       - name: Wait for Postgres
         run: |
@@ -58,8 +60,15 @@ jobs:
             sleep 1
           done
 
-      # Прогон миграций перед тестами
-      - name: Django migrate (CI)
+      - name: Verify Django configuration
+        run: |
+          python manage.py check
+
+      - name: Check migrations
+        run: |
+          python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations
         run: |
           python manage.py migrate --noinput
 
