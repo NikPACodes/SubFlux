@@ -8,3 +8,5 @@ ENV/
 .env*
 !.env.example
 *.bkp
+*.egg-info/
+build/

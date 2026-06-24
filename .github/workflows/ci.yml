@@ -31,7 +31,7 @@ jobs:
       PYTHONUNBUFFERED: "1"
       DJANGO_SETTINGS_MODULE: config.settings.test
       
-      POSTGRES_NAME: subflux_db
+      POSTGRES_DB: subflux_db
       POSTGRES_USER: subflux
       POSTGRES_PASSWORD: subflux
       POSTGRES_HOST: 127.0.0.1
