@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from  phonenumber_field.modelfields import PhoneNumberField
+from phonenumber_field.modelfields import PhoneNumberField
 from .managers import UserManager
 
 # Create your models here.
@@ -8,7 +8,7 @@ class User(AbstractUser):
     """
     Кастомный пользователь SubFlux на базе AbstractUser.
 
-    - username: ОБЯЗАТЕЛЬНЫЕ поля (уникальные):
+    - ОБЯЗАТЕЛЬНЫЕ поля (уникальные):
       username, email
     - дополнительные поля (необязательные):
       phone, bio, gender, birth_date, first_name, last_name

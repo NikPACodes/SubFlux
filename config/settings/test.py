@@ -1,5 +1,5 @@
 """
-Test - настроек для тестов
+Test - настройки для тестов
 """
 from dotenv import load_dotenv
 from pathlib import Path

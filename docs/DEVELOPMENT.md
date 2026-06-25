@@ -84,7 +84,7 @@ cp .env.example .env.test
 ### 2. Минимально необходимые переменные
 ```
 DJANGO_SECRET_KEY = '********'
-POSTGRES_NAME     = '********'
+POSTGRES_DB       = '********'
 POSTGRES_USER     = '********'
 POSTGRES_PASSWORD = '********'
 POSTGRES_HOST     = '********'

@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: subflux_app
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - .env.dev
+    environment:
+      POSTGRES_HOST: postgres
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,0.0.0.0
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+
+  postgres:
+    image: postgres:16
+    container_name: subflux_postgres
+    env_file:
+      - .env.dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - subflux_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+
+volumes:
+  subflux_pg_data:
