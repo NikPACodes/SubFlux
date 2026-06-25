@@ -30,6 +30,8 @@ jobs:
     env:
       PYTHONUNBUFFERED: "1"
       DJANGO_SETTINGS_MODULE: config.settings.test
+      DJANGO_SECRET_KEY: github-actions-test-secret-key
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
       
       POSTGRES_DB: subflux_db
       POSTGRES_USER: subflux
@@ -42,7 +44,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@6
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -56,9 +58,11 @@ jobs:
       - name: Wait for Postgres
         run: |
           for i in {1..30}; do
-            pg_isready -h 127.0.0.1 -p 5432 -U subflux -d subflux_test && break
+            pg_isready -h 127.0.0.1 -p 5432 -U subflux -d subflux_db && exit 0
             sleep 1
           done
+          echo "Postgres is not ready" 
+          exit 1
 
       - name: Verify Django configuration
         run: |
