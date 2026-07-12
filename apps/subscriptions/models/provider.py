@@ -15,7 +15,7 @@ class Provider(models.Model):
 
     name = models.CharField(max_length=128)
     slug = models.SlugField(max_length=128, unique=True, db_index=True)
-    description = models.TextField(max_length=256)
+    description = models.TextField(max_length=255)
 
     # URL логотипа/иконки сервиса, на начальных этапах ссылка проще, при необходимости переделается файл
     logo_url = models.URLField(blank=True, null=True)

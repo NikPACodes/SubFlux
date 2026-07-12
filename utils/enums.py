@@ -14,7 +14,7 @@ class SubscriptionStatus(models.TextChoices):
 
 class VerifiedPriceSource(models.TextChoices):
     """
-    # Источник данных (Подтвержденные цены)
+    Источник данных (Подтвержденные цены)
     """
     ADMIN = "admin", "Admin"
     API = "api", "API"
@@ -23,7 +23,7 @@ class VerifiedPriceSource(models.TextChoices):
 
 class PriceHistorySource(models.TextChoices):
     """
-    # Источник данных (Цена)
+    Источник данных (Цена)
     """
     # Подтвержденные цены (VerifiedPrice)
     VERIFIED = "verified", "Verified"
@@ -68,6 +68,9 @@ class PeriodUnit(models.TextChoices):
 
 
 class PaymentSource(models.TextChoices):
+    """
+    Источник данных (факт списания)
+    """
     # Ручной ввод
     MANUAL = "manual", "Manual"
     # Импорт из файла
