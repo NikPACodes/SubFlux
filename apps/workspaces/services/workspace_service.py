@@ -1,8 +1,15 @@
+"""
+Workspace service
+
+Функционал:
+- создание рабочего пространства
+"""
 from django.db import IntegrityError, transaction
 from apps.workspaces.models import Workspace
-from apps.workspaces.utils import gen_ws_code, gen_ws_slug
+from apps.workspaces.utils import gen_ws_code
+from utils.generators import gen_slug
 
-
+@transaction.atomic
 def create_workspace(*, owner, title: str, workspace_type: str,
                         slug: str|None = None, is_default: bool = False) -> Workspace:
     """
@@ -13,7 +20,7 @@ def create_workspace(*, owner, title: str, workspace_type: str,
     Для снижения риска коллизий выполняем дополнительные попытки создания Workspace с новым кодом.
     """
     # Нормализация slug
-    normalized_slug = gen_ws_slug(slug or title)
+    normalized_slug = gen_slug(slug or title)
 
     last_error: IntegrityError | None = None
     # Для устранения коллизии заложено 5 попыток создания Workspace

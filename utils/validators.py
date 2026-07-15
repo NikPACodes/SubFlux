@@ -209,3 +209,10 @@ def validator_subscription_status_change(status_current: str, status_new: str) -
     allowed_status = _ALLOWED_STATUS.get(status_current)
     if allowed_status is None or status_new not in allowed_status:
         raise ValidationError(f"Переход из статуса {status_current} в статус {status_new} запрещён")
+
+
+def validator_tree_integrity():
+    """
+    Валидация корректности структуры дерева.
+    """
+    pass

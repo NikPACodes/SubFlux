@@ -3,6 +3,11 @@ from django.db import models
 from utils.enums import WorkspaceType, WorkspaceStatus
 from django.conf import settings
 from apps.workspaces.utils import gen_ws_code
+from utils.validators import validator_tree_integrity
+
+# Максимальный уровень вложения групп
+# Внимание: level = 1 -> root
+MAX_WSG_DEPTH = 3
 
 class Workspace(models.Model):
     """
@@ -32,6 +37,7 @@ class Workspace(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                               related_name='owned_workspaces')
     is_default = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -52,11 +58,10 @@ class Workspace(models.Model):
         ]
 
         constraints = [
-            # Поля Title Slug Code не могут быть пустыми
+            # Поля / Title / Slug Code не могут быть пустыми
             models.CheckConstraint(condition = ~models.Q(title='') & ~models.Q(slug='') & ~models.Q(code=''),
                                    name='ws_title_slug_code_not_empty'),
-
-
+            # Default Workspace может быть только personal.
             models.CheckConstraint(condition=(models.Q(is_default=False) | models.Q(type=WorkspaceType.PERSONAL)),
                                    name='ws_default_must_be_personal'),
 
@@ -71,7 +76,6 @@ class Workspace(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title} ({self.code})"
-
 
 
 class WorkspaceGroup(models.Model):
@@ -90,8 +94,8 @@ class WorkspaceGroup(models.Model):
     slug = models.SlugField(max_length=64, db_index=True)
     description = models.TextField(blank=True)
 
-    # Уровень вложенности. Максимальный уровень - 3)
-    level = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(3)])
+    # Уровень вложенности.
+    level = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     parent = models.ForeignKey('self', on_delete=models.PROTECT, null=True, blank=True, related_name='children')
 
     is_active = models.BooleanField(default=True)
@@ -124,9 +128,6 @@ class WorkspaceGroup(models.Model):
             # Поля Title Slug не могут быть пустыми
             models.CheckConstraint(condition=(~models.Q(title='') & ~models.Q(slug='')),
                                    name='wsg_title_slug_not_empty'),
-            # Parent обязателен и появляется только для level > 1
-            models.CheckConstraint(condition=(models.Q(parent__isnull=True, level=1) | models.Q(parent__isnull=False, level__gt=1)),
-                                   name='wsg_parent_level_consistency'),
             # Группа не может ссылаться сама на себя
             models.CheckConstraint(condition=~models.Q(parent=models.F('id')),
                                    name='wsg_parent_not_self'),
@@ -140,6 +141,32 @@ class WorkspaceGroup(models.Model):
                                     condition=models.Q(parent__isnull=False),
                                     name='uniq_wsg_child_slug'),
         ]
+
+
+    def set_level_from_parent(self) -> None:
+        """
+        Расчет level на основе parent.
+
+        Если parent = None -> root -> level = 1
+        Если parent != None -> child -> level = parent.level + 1
+        """
+        if self.parent_id is None:
+            self.level = 1
+            return
+
+        self.level = self.parent.level + 1
+
+
+    def clean(self) -> None:
+        """
+        Валидация WorkspaceGroup.
+        """
+        super.clean()
+        # Расчет level
+        self.set_level_from_parent()
+        # Валидация дерева
+        validator_tree_integrity() #TODO доделать валидацию структуры дерева
+
 
     def __str__(self):
         return f'Workspace_ID {self.workspace_id} -> {self.title} {self.level}'
