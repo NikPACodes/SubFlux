@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'phonenumber_field',
 
     'apps.users.apps.UsersConfig',
+    'apps.workspaces.apps.WorkspaceConfig',
     'apps.subscriptions.apps.SubscriptionsConfig',
 
     'rest_framework',

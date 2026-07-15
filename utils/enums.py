@@ -77,3 +77,23 @@ class PaymentSource(models.TextChoices):
     IMPORT = "import", "Import"
     # Синхронизация
     SYNC = "sync", "Sync"
+
+
+class WorkspaceType(models.TextChoices):
+    """
+    Тип рабочей области
+    """
+    PERSONAL = "personal", "Personal"
+    TEAM = "team", "Team"
+    ORGANIZATION = "organization", "Organization"
+
+
+class WorkspaceStatus(models.TextChoices):
+    """
+    Состояние рабочей области
+    """
+    ACTIVE = "active", "Active"
+    DEACTIVATED = "deactivated", "Deactivated"
+    BLOCKED = "blocked", "Blocked"
+    ARCHIVED = "archived", "Archived"
+    DELETED = "deleted", "Deleted"

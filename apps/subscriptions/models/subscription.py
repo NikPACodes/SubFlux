@@ -4,6 +4,7 @@ from django.db import models
 
 from .category import Category
 from .provider import Provider
+from apps.workspaces.models import Workspace, WorkspaceGroup
 
 from utils.validators import validator_currency, validator_timezone
 from utils.enums import SubscriptionStatus
@@ -20,6 +21,10 @@ class Subscription(models.Model):
     - поля для UI (заметки, метки, платежный метод)
     - денормализацию "Текущей цены" и "Следующего списания" для быстрого поиска
     """
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE,
+                                  related_name='subscriptions', db_index=True)
+    ws_group = models.ForeignKey(WorkspaceGroup, on_delete=models.SET_NULL,
+                                 null=True, blank=True, related_name='subscriptions')
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name="subscriptions", db_index=True)
