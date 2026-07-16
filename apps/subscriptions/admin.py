@@ -13,14 +13,14 @@ class SubscriptionAdmin(admin.ModelAdmin):
     """
     list_display = ('id', 'title', 'user', 'provider', 'category', 'status',
                     'current_price_amount', 'current_price_currency', 'next_billing_at',
-                    'is_shared', 'is_deleted')
+                    'is_deleted')
     readonly_fields = ('status', 'started_at', 'ended_at',
                        'current_price_amount', 'current_price_currency',
                        'next_billing_at', 'last_billed_at', 'billing_timezone',
                        'create_at', 'update_at')
 
     search_fields = ('title', 'user__email', 'user__username', 'provider__name', 'category__name')
-    list_filter = ('status', 'provider', 'category', 'is_shared', 'is_deleted', 'billing_timezone')
+    list_filter = ('status', 'provider', 'category', 'is_deleted', 'billing_timezone')
 
     autocomplete_fields = ('user', 'provider', 'category')
     list_select_related = ('user', 'provider', 'category')
@@ -30,7 +30,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Основное', {'fields': ('user', 'title', 'description', 'provider', 'category', 'status')},),
-        ('Пользовательские настройки', {'fields': ('payment_method_label', 'owner_note', 'is_shared',
+        ('Пользовательские настройки', {'fields': ('payment_method_label', 'owner_note',
                                                    'billing_timezone', 'meta', 'is_deleted')},),
         ('Расчетные поля', {'fields': ('current_price_amount', 'current_price_currency',
                                        'next_billing_at', 'last_billed_at')},),

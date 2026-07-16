@@ -226,7 +226,6 @@ def create_subscription_with_defaults(*, user,
                                          billing_timezone: Optional[str] = None,
                                          payment_method_label: Optional[str] = None,
                                          owner_note: Optional[str] = None,
-                                         is_shared: bool = False,
                                          now = None,
                                          price: PriceInput,
                                          schedule: ScheduleInput) -> Subscription:
@@ -292,7 +291,6 @@ def create_subscription_with_defaults(*, user,
                                       ended_at=ended_at,
                                       payment_method_label=payment_method_label,
                                       owner_note=owner_note,
-                                      is_shared=is_shared,
                                       current_price_amount=amount,
                                       current_price_currency=current,
                                       billing_timezone=billing_timezone,
@@ -344,8 +342,7 @@ def update_subscription_data(*, subscription: Subscription,
                                 category: Optional[Category] = None,
                                 billing_timezone: Optional[str] = None,
                                 payment_method_label: Optional[str] = None,
-                                owner_note: Optional[str] = None,
-                                is_shared: Optional[bool] = None) -> Subscription:
+                                owner_note: Optional[str] = None) -> Subscription:
     """
     Обновление простых полей подписки
 
@@ -374,10 +371,6 @@ def update_subscription_data(*, subscription: Subscription,
     if owner_note is not None:
         sub_lock.owner_note = owner_note
         update_fields.append('owner_note')
-
-    if is_shared is not None:
-        sub_lock.is_shared = is_shared
-        update_fields.append('is_shared')
 
     if category is not None:
         sub_lock.category = category

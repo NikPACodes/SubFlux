@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import re
 from pycountry import currencies, countries
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Any
 
 from utils.enums import PriceHistorySource, PeriodUnit, SubscriptionStatus
 
@@ -211,8 +211,81 @@ def validator_subscription_status_change(status_current: str, status_new: str) -
         raise ValidationError(f"Переход из статуса {status_current} в статус {status_new} запрещён")
 
 
-def validator_tree_integrity():
+def validator_tree_integrity(*, instance: Any, parent_attr: str = 'parent', level_attr: str = 'level',
+                                workspace_id_attr: str = 'workspace_id', max_depth: int = 3) -> None:
     """
     Валидация корректности структуры дерева.
+
+    Проверки:
+    - root должен иметь level = 1;
+    - child должен иметь level = parent.level + 1;
+    - parent и child должны принадлежать одному workspace;
+    - узел не может быть parent самому себе;
+    - нельзя создать циклическую вложенность;
+    - глубина дерева не должна превышать max_depth.
     """
-    pass
+    if max_depth < 1:
+        raise ValidationError(f"Максимальный уровень вложенности дерева должен быть >= 1.")
+
+    # Получение значений
+    parent = getattr(instance, parent_attr, None)
+    level = getattr(instance, level_attr, None)
+    ws_id = getattr(instance, workspace_id_attr, None)
+
+    if level is None:
+        raise ValidationError(f"Уровень дерева не может быть пустым.")
+    elif level < 1:
+        raise ValidationError(f"Уровень дерева должен быть >= 1.")
+    elif level > max_depth:
+        raise ValidationError(f"Максимальный уровень вложенности {max_depth}.")
+
+    # Если parent отсутствует, значит это root.
+    if parent is None:
+        if level != 1:
+            raise ValidationError(f"Корневой узел должен иметь уровень 1.")
+        return
+
+    # Parent не сохранен (нет pk).
+    if getattr(parent, "pk", None) is None:
+        raise ValidationError(f"Не получилось получить PK parent")
+
+    if instance.pk and parent.pk == instance.pk:
+        raise ValidationError(f"Узел не может ссылаться на себя.")
+
+    # Получение Workspace ID родителя
+    parent_ws_id = getattr(parent, workspace_id_attr, None)
+
+    if parent_ws_id != ws_id:
+        raise ValidationError(f"Workspace родителя не соответствует Workspace текущего узла.")
+
+    parent_level = getattr(parent, level_attr, None)
+    if parent_level is None:
+        raise ValidationError(f"Уровень родительского узла не определен.")
+
+    # Ожидаемый уровень
+    next_level = parent_level + 1
+    if level != next_level:
+        raise ValidationError(f"Уровень не корректен {level}. Ожидаемый уровень {next_level}.")
+
+    # Проверка корректность вложенности дерева вверх
+    ancestor = parent
+    #
+    visited_ids = set()
+    # Подымаемся по дереву
+    while ancestor is not None:
+        ancestor_pk = getattr(ancestor, "pk", None)
+
+        if ancestor_pk is not None:
+            if ancestor_pk in visited_ids:
+                raise ValidationError(f"Циклическая вложенность в дерево не допускается.")
+            visited_ids.add(ancestor_pk)
+
+        if instance.pk and ancestor_pk == instance.pk:
+            raise ValidationError(f"Циклическая вложенность в дерево не допускается.")
+
+        ancestor_ws_id = getattr(ancestor, workspace_id_attr, None)
+
+        if ancestor_ws_id != ws_id:
+            raise ValidationError(f"Все предки должны принадлежать одному Workspace.")
+        # Получение следующего предка
+        ancestor = getattr(ancestor, parent_attr, None)

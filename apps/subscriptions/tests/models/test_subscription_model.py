@@ -23,7 +23,6 @@ def test_create_subscription(subscription_data_default,
                                            started_at=subscription_data_default["started_at"],
                                            payment_method_label=subscription_data_default["payment_method_label"],
                                            owner_note=subscription_data_default["owner_note"],
-                                           is_shared=subscription_data_default["is_shared"],
                                            billing_timezone=subscription_data_default["billing_timezone"])
 
     assert test_sub.id is not None

@@ -49,7 +49,6 @@ def test_service_create_subscription_manual_full(subscription_data_default,
                                                                          billing_timezone="Europe/Moscow",
                                                                          payment_method_label="VISA",
                                                                          owner_note="Доп. заметки",
-                                                                         is_shared=False,
                                                                          price=test_price_manual,
                                                                          schedule=test_schedule)
     # Тест Subscription
@@ -122,7 +121,6 @@ def test_service_create_subscription_verified_full(subscription_data_default,
                                                                            billing_timezone="Europe/Moscow",
                                                                            payment_method_label="VISA",
                                                                            owner_note="Доп. заметки",
-                                                                           is_shared=False,
                                                                            price=test_price_verified,
                                                                            schedule=test_schedule)
 
@@ -290,7 +288,6 @@ def test_service_subscription_update_fields(user_default, category_factory):  #
                                                  billing_timezone="Asia/Yekaterinburg",
                                                  payment_method_label="VISA",
                                                  owner_note="Заметка владельца",
-                                                 is_shared=True,
                                                  price=test_price_manual,
                                                  schedule=test_schedule)
     assert test_sub.id is not None
@@ -301,15 +298,13 @@ def test_service_subscription_update_fields(user_default, category_factory):  #
                                                category=test_cat2,
                                                billing_timezone="America/Los_Angeles",
                                                payment_method_label="Новый метод МИР",
-                                               owner_note="Обновленная заметка",
-                                               is_shared=False)
+                                               owner_note="Обновленная заметка")
 
     assert test_sub.id == test_sub_update.id
     assert test_sub.title != test_sub_update.title
     assert test_sub.category != test_sub_update.category
     assert test_sub.payment_method_label != test_sub_update.payment_method_label
     assert test_sub.owner_note != test_sub_update.owner_note
-    assert test_sub.is_shared != test_sub_update.is_shared
     assert test_sub.billing_timezone != test_sub_update.billing_timezone
     assert test_sub.next_billing_at != test_sub_update.next_billing_at
 

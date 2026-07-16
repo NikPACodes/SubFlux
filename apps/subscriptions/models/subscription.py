@@ -49,8 +49,6 @@ class Subscription(models.Model):
     payment_method_label = models.CharField(max_length=64, blank=True, null=True)
     # Короткая заметка (для удобства пользователя)
     owner_note = models.CharField(max_length=255, blank=True, null=True)
-    # Флаг "Делится/общая/семейная подписка" (для аналитики)
-    is_shared = models.BooleanField(default=False)
 
     # Денормализация текущей цены (для удобства запросов)
     current_price_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True,

@@ -36,7 +36,6 @@ class SubscriptionReadSerializer(serializers.ModelSerializer):
             'last_billed_at',
             'payment_method_label',
             'owner_note',
-            'is_shared',
             'started_at',
             'ended_at',
             'create_at',
@@ -60,7 +59,6 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     billing_timezone = serializers.CharField(max_length=64, required=False, allow_blank=False, allow_null=False)
     payment_method_label = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
     owner_note = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
-    is_shared = serializers.BooleanField(default=False)
 
     price = PriceInputSerializer()
     schedule = ScheduleInputSerializer()
@@ -112,7 +110,6 @@ class SubscriptionCreateSerializer(serializers.Serializer):
             billing_timezone  = validated_data.get('billing_timezone'),
             payment_method_label = validated_data.get('payment_method_label'),
             owner_note = validated_data.get('owner_note'),
-            is_shared = validated_data.get('is_shared', False),
             price = price_input,
             schedule = schedule_input,
         )
@@ -134,7 +131,6 @@ class SubscriptionUpdateSerializer(serializers.Serializer):
 
     payment_method_label = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
     owner_note = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
-    is_shared = serializers.BooleanField(default=False)
 
     def validate_category_id(self, value):
         if value is None:

@@ -21,7 +21,6 @@ def subscription_data_default():
         "ended_at":"2001-02-01",
         "payment_method_label":"VISA",
         "owner_note":"заметки пользователя",
-        "is_shared":"False",
         "billing_timezone":"Asia/Yekaterinburg",
     }
 
@@ -91,7 +90,7 @@ def subscription_default(db, user_default):
     return Subscription.objects.create(user=user_default, title="Тестовая подписка", description="Подписка на сервис",
                                        status="active", started_at="2001-01-01", ended_at="2001-02-01",
                                        payment_method_label="VISA", owner_note="заметки пользователя",
-                                       is_shared=False, billing_timezone="UTC")
+                                       billing_timezone="UTC")
 
 
 #--------- Фабрики для создания тестовых объектов ---------
@@ -145,11 +144,11 @@ def subscription_factory(db):
                              provider: Provider=None, category: Category=None,
                              started_at: datetime.date=None, ended_at: datetime.date=None,
                              payment_method_label: str=None, owner_note: str=None,
-                             is_shared: bool=False, billing_timezone: str="UTC", meta=None) -> Subscription:
+                             billing_timezone: str="UTC", meta=None) -> Subscription:
         return Subscription.objects.create(user=user, title=title, description=description, status=status,
                                            provider=provider, category=category, started_at=started_at, ended_at=ended_at,
                                            payment_method_label=payment_method_label, owner_note=owner_note,
-                                           is_shared=is_shared, billing_timezone=billing_timezone, meta=meta)
+                                           billing_timezone=billing_timezone, meta=meta)
     return _create_subscription
 
 

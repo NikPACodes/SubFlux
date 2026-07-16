@@ -146,9 +146,6 @@ class WorkspaceGroup(models.Model):
     def set_level_from_parent(self) -> None:
         """
         Расчет level на основе parent.
-
-        Если parent = None -> root -> level = 1
-        Если parent != None -> child -> level = parent.level + 1
         """
         if self.parent_id is None:
             self.level = 1
@@ -165,8 +162,8 @@ class WorkspaceGroup(models.Model):
         # Расчет level
         self.set_level_from_parent()
         # Валидация дерева
-        validator_tree_integrity() #TODO доделать валидацию структуры дерева
-
+        validator_tree_integrity(instance=self, parent_attr='parent', level_attr='level',
+                                 workspace_id_attr='workspace_id', max_depth=MAX_WSG_DEPTH)
 
     def __str__(self):
         return f'Workspace_ID {self.workspace_id} -> {self.title} {self.level}'
