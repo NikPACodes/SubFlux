@@ -100,7 +100,7 @@ class SubscriptionCreateSerializer(serializers.Serializer):
 
         return call_service(
             create_subscription_with_defaults,
-            user = request.user,
+            owner = request.user,
             title = validated_data.get('title'),
             description = validated_data.get('description'),
             provider = provider,

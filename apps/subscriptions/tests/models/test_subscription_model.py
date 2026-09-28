@@ -14,7 +14,7 @@ def test_create_subscription(subscription_data_default,
     test_u = user_default
     test_p = provider_default
     test_cat = category_default
-    test_sub = Subscription.objects.create(user=test_u,
+    test_sub = Subscription.objects.create(owner=test_u,
                                            provider=test_p,
                                            category=test_cat,
                                            title=subscription_data_default["title"],
@@ -37,7 +37,7 @@ def test_subscription_raises_amount(subscription_data_default, user_default):
     """
     test_u = user_default
     with pytest.raises(IntegrityError):
-        Subscription.objects.create(user=test_u,
+        Subscription.objects.create(owner=test_u,
                                     title=subscription_data_default["title"],
                                     current_price_amount=-15.05)
 

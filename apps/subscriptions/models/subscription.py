@@ -26,7 +26,7 @@ class Subscription(models.Model):
     ws_group = models.ForeignKey(WorkspaceGroup, on_delete=models.SET_NULL,
                                  null=True, blank=True, related_name='subscriptions')
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                              related_name="subscriptions", db_index=True)
     # Сервис (опционально т.к. запись может быть создана вручную)
     provider = models.ForeignKey(Provider, on_delete=models.SET_NULL,
@@ -81,9 +81,9 @@ class Subscription(models.Model):
         verbose_name_plural = 'Подписки'
         indexes = [
             # Индекс для ускорения поиска подписок пользователя по статусу
-            models.Index(fields=["user", "status"]),
+            models.Index(fields=["owner", "status"]),
             # Индекс для ускорения поиска списка ближайших списаний
-            models.Index(fields=["user", "next_billing_at"]),
+            models.Index(fields=["owner", "next_billing_at"]),
         ]
         constraints = [
             # Цена не может быть отрицательной

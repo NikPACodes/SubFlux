@@ -87,7 +87,7 @@ def subscription_default(db, user_default):
     """
     Базовая подписка без связанных структур для Базового пользователя
     """
-    return Subscription.objects.create(user=user_default, title="Тестовая подписка", description="Подписка на сервис",
+    return Subscription.objects.create(owner=user_default, title="Тестовая подписка", description="Подписка на сервис",
                                        status="active", started_at="2001-01-01", ended_at="2001-02-01",
                                        payment_method_label="VISA", owner_note="заметки пользователя",
                                        billing_timezone="UTC")
@@ -138,14 +138,14 @@ def category_factory(db):
 def subscription_factory(db):
     """
     Фабрика создания подписок для тестов:
-    SubscriptionX = subscription_factory(user=..., title="...", ...)
+    SubscriptionX = subscription_factory(owner=..., title="...", ...)
     """
-    def _create_subscription(*, user,  title: str, description: str=None, status: str="active",
+    def _create_subscription(*, owner,  title: str, description: str=None, status: str="active",
                              provider: Provider=None, category: Category=None,
                              started_at: datetime.date=None, ended_at: datetime.date=None,
                              payment_method_label: str=None, owner_note: str=None,
                              billing_timezone: str="UTC", meta=None) -> Subscription:
-        return Subscription.objects.create(user=user, title=title, description=description, status=status,
+        return Subscription.objects.create(owner=owner, title=title, description=description, status=status,
                                            provider=provider, category=category, started_at=started_at, ended_at=ended_at,
                                            payment_method_label=payment_method_label, owner_note=owner_note,
                                            billing_timezone=billing_timezone, meta=meta)

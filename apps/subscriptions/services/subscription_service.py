@@ -216,7 +216,7 @@ def status_transition_calculation(*, subscription: Subscription, status_new: str
 #----------------------------------------------------------------------------------------------
 
 @transaction.atomic
-def create_subscription_with_defaults(*, user,
+def create_subscription_with_defaults(*, owner,
                                          title: str,
                                          description: Optional[str] = None,
                                          provider: Optional[Provider] = None,
@@ -246,7 +246,7 @@ def create_subscription_with_defaults(*, user,
     if billing_timezone is not None:
         validator_timezone(value=billing_timezone)
     else:
-        billing_timezone = getattr(user, 'timezone', 'UTC')
+        billing_timezone = getattr(owner, 'timezone', 'UTC')
 
     # Задаем по умолчанию now
     started_at = now if started_at is None else started_at
@@ -281,7 +281,7 @@ def create_subscription_with_defaults(*, user,
         amount = price.amount
         current = price.currency
 
-    sub = Subscription.objects.create(user=user,
+    sub = Subscription.objects.create(owner=owner,
                                       provider=provider,
                                       category=category,
                                       title=title,

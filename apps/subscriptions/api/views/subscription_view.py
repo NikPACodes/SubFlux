@@ -46,7 +46,7 @@ class SubscriptionViewSet(ModelViewSet):
 
 
     def get_queryset(self):
-        return Subscription.objects.filter(user=self.request.user, is_deleted=False).select_related('category', 'provider').order_by('-create_at')
+        return Subscription.objects.filter(owner=self.request.user, is_deleted=False).select_related('category', 'provider').order_by('-create_at')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

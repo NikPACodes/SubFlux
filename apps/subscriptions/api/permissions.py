@@ -7,4 +7,4 @@ class IsOwner(BasePermission):
     message = "У вас нет полномочий к этому объекту."
 
     def has_object_permission(self, request, view, obj):
-        return obj.user_id == request.user.id
+        return obj.owner_id == request.user.id

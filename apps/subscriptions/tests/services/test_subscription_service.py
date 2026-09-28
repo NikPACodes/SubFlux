@@ -40,7 +40,7 @@ def test_service_create_subscription_manual_full(subscription_data_default,
                                   period_interval=1,
                                   anchor_weekday=1)
 
-    test_service_subscription_manual = create_subscription_with_defaults(user=test_u,
+    test_service_subscription_manual = create_subscription_with_defaults(owner=test_u,
                                                                          title=subscription_data_default['title'],
                                                                          provider=test_p,
                                                                          category=test_cat,
@@ -112,7 +112,7 @@ def test_service_create_subscription_verified_full(subscription_data_default,
                                   period_interval=1,
                                   anchor_weekday=1)
 
-    test_service_subscription_verified = create_subscription_with_defaults(user=test_u,
+    test_service_subscription_verified = create_subscription_with_defaults(owner=test_u,
                                                                            title="Тестовая подписка 1",
                                                                            provider=test_p,
                                                                            category=test_cat,
@@ -178,7 +178,7 @@ def test_service_create_trial_subscription(subscription_data_default, user_defau
     test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=0,
                                   trial_ends_at=trial_ends_at)
 
-    test_service_subscription_trial = create_subscription_with_defaults(user=test_u,
+    test_service_subscription_trial = create_subscription_with_defaults(owner=test_u,
                                                                         title=subscription_data_default['title'],
                                                                         started_at=started_at,
                                                                         billing_timezone=subscription_data_default['billing_timezone'],
@@ -209,7 +209,7 @@ def test_service_create_delayed_subscription(subscription_data_default, user_def
     test_u = user_default
     test_price_manual = PriceInput(amount=Decimal('20.10'), currency="USD", source=PriceHistorySource.MANUAL)
     test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=0)
-    test_service_subscription_delayed = create_subscription_with_defaults(user=test_u,
+    test_service_subscription_delayed = create_subscription_with_defaults(owner=test_u,
                                                                           title=subscription_data_default['title'],
                                                                           started_at=started_at,
                                                                           billing_timezone=None,
@@ -245,7 +245,7 @@ def test_service_create_subscription_raises_verified_or_manual(subscription_data
     test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=1)
 
     with pytest.raises(ValidationError):
-        create_subscription_with_defaults(user=test_u, title="Тестовая подписка 1", provider=test_p,
+        create_subscription_with_defaults(owner=test_u, title="Тестовая подписка 1", provider=test_p,
                                           price=test_price_verified, schedule=test_schedule)
 
 
@@ -261,7 +261,7 @@ def test_service_create_subscription_raises_anchor(user_default):
     test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK)
 
     with pytest.raises(ValidationError):
-        create_subscription_with_defaults(user=test_u, title="Тестовая подписка 1",
+        create_subscription_with_defaults(owner=test_u, title="Тестовая подписка 1",
                                           price=test_price, schedule=test_schedule)
 
 
@@ -281,7 +281,7 @@ def test_service_subscription_update_fields(user_default, category_factory):  #
     test_cat2 = category_factory(name="Категория2", slug="Cat2", sort_order=0)
 
 
-    test_sub = create_subscription_with_defaults(user=test_u,
+    test_sub = create_subscription_with_defaults(owner=test_u,
                                                  title="Тест обновления",
                                                  description="Описание",
                                                  category=test_cat1,
@@ -322,7 +322,7 @@ def test_service_set_price_manual_closes_previous(subscription_data_default, use
     test_u = user_default
     test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source=PriceHistorySource.MANUAL)
     test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=1)
-    test_sub_manual = create_subscription_with_defaults(user=test_u, title=subscription_data_default['title'],
+    test_sub_manual = create_subscription_with_defaults(owner=test_u, title=subscription_data_default['title'],
                                                         price=test_price_manual, schedule=test_schedule)
     test_prev_price = test_sub_manual.price_history.first()
 
@@ -365,7 +365,7 @@ def test_service_set_price_verified_closes_previous(subscription_data_default,
                                      amount=verified_price_data_default["amount"])
     test_price_verified = PriceInput(verified_price=test_vp, source=PriceHistorySource.VERIFIED)
     test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=1)
-    test_sub_verified = create_subscription_with_defaults(user=test_u, title=subscription_data_default['title'],
+    test_sub_verified = create_subscription_with_defaults(owner=test_u, title=subscription_data_default['title'],
                                                           provider=test_p, price=test_price_verified,
                                                           schedule=test_schedule)
     test_prev_price = test_sub_verified.price_history.first()
@@ -407,7 +407,7 @@ def test_service_set_price_raises_effective_from(subscription_data_default, user
     # Создаем для Subscription + PriceHistory + BillingSchedule
     test_price_manual = PriceInput(amount=Decimal('25.10'), currency="USD", source=PriceHistorySource.MANUAL)
     test_schedule = ScheduleInput(period_unit=PeriodUnit.WEEK, period_interval=1, anchor_weekday=1)
-    test_sub_manual = create_subscription_with_defaults(user=user_default, title=subscription_data_default['title'],
+    test_sub_manual = create_subscription_with_defaults(owner=user_default, title=subscription_data_default['title'],
                                                         price=test_price_manual, schedule=test_schedule)
     now = timezone.now()
     with pytest.raises(ValidationError):
