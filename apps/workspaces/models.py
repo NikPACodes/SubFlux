@@ -3,7 +3,7 @@ from django.db import models
 from utils.enums import WorkspaceType, WorkspaceStatus
 from django.conf import settings
 from apps.workspaces.utils import gen_ws_code
-from utils.validators import validator_tree_integrity
+from utils.validators import validator_tree_integrity, validator_timezone
 
 # Максимальный уровень вложения групп
 # Внимание: level = 1 -> root
@@ -37,6 +37,9 @@ class Workspace(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
                               related_name='owned_workspaces')
     is_default = models.BooleanField(default=False)
+
+    timezone = models.CharField(max_length=64, blank=False, null=False,
+                                default="UTC", validators=[validator_timezone])
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

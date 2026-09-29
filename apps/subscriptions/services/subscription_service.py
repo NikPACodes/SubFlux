@@ -16,6 +16,7 @@ from typing import Optional
 from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from apps.workspaces.models import Workspace, WorkspaceGroup
 
 from apps.subscriptions.models import (BillingSchedule,
                                        PriceHistory,
@@ -216,8 +217,9 @@ def status_transition_calculation(*, subscription: Subscription, status_new: str
 #----------------------------------------------------------------------------------------------
 
 @transaction.atomic
-def create_subscription_with_defaults(*, owner,
+def create_subscription_with_defaults(*, workspace: Workspace,
                                          title: str,
+                                         ws_group: Optional[WorkspaceGroup] = None,
                                          description: Optional[str] = None,
                                          provider: Optional[Provider] = None,
                                          category: Optional[Category] = None,
@@ -242,11 +244,11 @@ def create_subscription_with_defaults(*, owner,
     """
     now = now or timezone.now()
 
-    # Проверка billing_timezone, при отсутствии берем с пользователя или UTC
-    if billing_timezone is not None:
-        validator_timezone(value=billing_timezone)
-    else:
-        billing_timezone = getattr(owner, 'timezone', 'UTC')
+    # При отсутствии billing_timezone берем часовой пояс workspace
+    if billing_timezone is None:
+        billing_timezone = workspace.timezone or 'UTC'
+
+    validator_timezone(value=billing_timezone)
 
     # Задаем по умолчанию now
     started_at = now if started_at is None else started_at
@@ -281,7 +283,8 @@ def create_subscription_with_defaults(*, owner,
         amount = price.amount
         current = price.currency
 
-    sub = Subscription.objects.create(owner=owner,
+    sub = Subscription.objects.create(workspace=workspace,
+                                      ws_group=ws_group,
                                       provider=provider,
                                       category=category,
                                       title=title,
@@ -311,10 +314,10 @@ def create_subscription_with_defaults(*, owner,
                                     source=price.source)
 
     validator_billing_schedule_params(period_unit=schedule.period_unit,
-                                     period_interval=schedule.period_interval,
-                                     anchor_day=schedule.anchor_day,
-                                     anchor_weekday=schedule.anchor_weekday,
-                                     grace_days=schedule.grace_days)
+                                      period_interval=schedule.period_interval,
+                                      anchor_day=schedule.anchor_day,
+                                      anchor_weekday=schedule.anchor_weekday,
+                                      grace_days=schedule.grace_days)
 
     # Начальная точка расчета расписания (в основном now, но для DELAYED started_at)
     schedule_from_dt = _initial_schedule_from_dt(initial_status=initial_status, started_at=started_at, now=now)

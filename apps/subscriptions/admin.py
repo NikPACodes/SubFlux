@@ -11,7 +11,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     """
     Админка подписки
     """
-    list_display = ('id', 'title', 'owner', 'provider', 'category', 'status',
+    list_display = ('id', 'title', 'workspace', 'provider', 'category', 'status',
                     'current_price_amount', 'current_price_currency', 'next_billing_at',
                     'is_deleted')
     readonly_fields = ('status', 'started_at', 'ended_at',
@@ -19,17 +19,17 @@ class SubscriptionAdmin(admin.ModelAdmin):
                        'next_billing_at', 'last_billed_at', 'billing_timezone',
                        'create_at', 'update_at')
 
-    search_fields = ('title', 'owner__email', 'owner__username', 'provider__name', 'category__name')
+    search_fields = ('title', 'workspace__slug', 'workspace__code', 'provider__name', 'category__name')
     list_filter = ('status', 'provider', 'category', 'is_deleted', 'billing_timezone')
 
-    autocomplete_fields = ('owner', 'provider', 'category')
-    list_select_related = ('owner', 'provider', 'category')
+    autocomplete_fields = ('provider', 'category')
+    list_select_related = ('workspace', 'provider', 'category')
 
     date_hierarchy = 'create_at'
     ordering = ('-create_at',)
 
     fieldsets = (
-        ('Основное', {'fields': ('owner', 'title', 'description', 'provider', 'category', 'status')},),
+        ('Основное', {'fields': ('workspace', 'ws_group', 'title', 'description', 'provider', 'category', 'status')},),
         ('Пользовательские настройки', {'fields': ('payment_method_label', 'owner_note',
                                                    'billing_timezone', 'meta', 'is_deleted')},),
         ('Расчетные поля', {'fields': ('current_price_amount', 'current_price_currency',
@@ -103,11 +103,12 @@ class BillingScheduleAdmin(admin.ModelAdmin):
                        'anchor_day', 'anchor_weekday', 'trial_ends_at', 'next_run_at',
                        'grace_days', 'is_current', 'create_at', 'update_at')
 
-    search_fields = ('subscription__title', 'subscription__owner__email', 'subscription__owner__username')
+    search_fields = ('subscription__title',
+                     'subscription__workspace__slug', 'subscription__workspace__code')
     list_filter = ('period_unit', 'period_interval', 'is_current',)
 
     autocomplete_fields = ('subscription',)
-    list_select_related = ('subscription', 'subscription__owner')
+    list_select_related = ('subscription', 'subscription__workspace')
 
     date_hierarchy = 'next_run_at'
     ordering = ('-is_current', 'next_run_at')
@@ -133,12 +134,12 @@ class PriceHistoryAdmin(admin.ModelAdmin):
     readonly_fields = ('subscription', 'verified_price', 'amount', 'currency',
                     'effective_from', 'effective_to', 'change_reason', 'source', 'create_at')
 
-    search_fields = ('subscription__title', 'subscription__owner__email', 'subscription__owner__username',
+    search_fields = ('subscription__title', 'subscription__workspace__slug', 'subscription__workspace__code',
                      'verified_price__provider__name', 'verified_price__plan_name')
     list_filter = ('source', 'currency', 'effective_from', 'effective_to',)
 
     autocomplete_fields = ('subscription', 'verified_price')
-    list_select_related = ('subscription', 'subscription__owner', 'verified_price', 'verified_price__provider')
+    list_select_related = ('subscription', 'subscription__workspace', 'verified_price', 'verified_price__provider')
 
     date_hierarchy = 'effective_from'
     ordering = ('-effective_from',)
@@ -183,11 +184,11 @@ class PaymentAdmin(admin.ModelAdmin):
                     'created_at')
     readonly_fields = ('subscription', 'amount', 'currency', 'paid_at', 'source', 'price_history', 'created_at')
 
-    search_fields = ('subscription__title', 'subscription__owner__email', 'subscription__owner__username')
+    search_fields = ('subscription__title', 'subscription__workspace__slug', 'subscription__workspace__code')
     list_filter = ('source', 'currency', 'paid_at')
 
     autocomplete_fields = ('subscription', 'price_history')
-    list_select_related = ('subscription', 'subscription__owner', 'price_history')
+    list_select_related = ('subscription', 'subscription__workspace', 'price_history')
 
     date_hierarchy = 'paid_at'
     ordering = ('-paid_at', '-created_at')

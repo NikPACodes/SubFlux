@@ -1,4 +1,4 @@
-from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -12,7 +12,7 @@ from utils.enums import SubscriptionStatus
 
 class Subscription(models.Model):
     """
-    Subscription - подписка пользователя.
+    Subscription - подписка рабочего пространства.
 
     Одна запись = одна подписка на конкретный сервис (или созданная вручную)
 
@@ -26,8 +26,6 @@ class Subscription(models.Model):
     ws_group = models.ForeignKey(WorkspaceGroup, on_delete=models.SET_NULL,
                                  null=True, blank=True, related_name='subscriptions')
 
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name="subscriptions", db_index=True)
     # Сервис (опционально т.к. запись может быть создана вручную)
     provider = models.ForeignKey(Provider, on_delete=models.SET_NULL,
                                  null=True, blank=True, related_name="subscriptions")
@@ -63,7 +61,7 @@ class Subscription(models.Model):
     next_billing_at = models.DateTimeField(blank=True, null=True, db_index=True)
 
     # IANA timezone ("Asia/Yekaterinburg", "Europe/Moscow"...)
-    # Используется дял корректного расчета дат списания с учетом локального времени подписки
+    # Используется для корректного расчета дат списания с учетом локального времени подписки
     billing_timezone = models.CharField(max_length=64, blank=False, null=False, default="UTC", validators=[validator_timezone])
 
     # Факт последнего списания
@@ -80,10 +78,12 @@ class Subscription(models.Model):
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         indexes = [
-            # Индекс для ускорения поиска подписок пользователя по статусу
-            models.Index(fields=["owner", "status"]),
+            # Индекс для ускорения поиска подписок workspace по статусу
+            models.Index(fields=["workspace", "status"],
+                         name="sub_ws_status_idx"),
             # Индекс для ускорения поиска списка ближайших списаний
-            models.Index(fields=["owner", "next_billing_at"]),
+            models.Index(fields=["workspace", "next_billing_at"],
+                         name="sub_ws_next_billing_idx"),
         ]
         constraints = [
             # Цена не может быть отрицательной
