@@ -38,7 +38,8 @@ from utils.validators import (validator_price_history_source,
                               validator_billing_schedule_params,
                               validator_timezone,
                               validator_subscription_status,
-                              validator_subscription_status_change,)
+                              validator_subscription_status_change,
+                              validator_workspace_group,)
 
 #----------------------------------------------------------------------------------------------
 
@@ -283,6 +284,9 @@ def create_subscription_with_defaults(*, workspace: Workspace,
         amount = price.amount
         current = price.currency
 
+    # Валидация WorkspaceGroup
+    validator_workspace_group(workspace_id=workspace.pk, ws_group=ws_group)
+
     sub = Subscription.objects.create(workspace=workspace,
                                       ws_group=ws_group,
                                       provider=provider,
@@ -342,6 +346,7 @@ def create_subscription_with_defaults(*, workspace: Workspace,
 def update_subscription_data(*, subscription: Subscription,
                                 title: Optional[str] = None,
                                 description: Optional[str] = None,
+                                ws_group: Optional[WorkspaceGroup] = None,
                                 category: Optional[Category] = None,
                                 billing_timezone: Optional[str] = None,
                                 payment_method_label: Optional[str] = None,
@@ -366,6 +371,11 @@ def update_subscription_data(*, subscription: Subscription,
     if description is not None:
         sub_lock.description = description
         update_fields.append('description')
+
+    if ws_group is not None:
+        validator_workspace_group(workspace_id=sub_lock.workspace_id, ws_group=ws_group)
+        sub_lock.ws_group = ws_group
+        update_fields.append("ws_group")
 
     if payment_method_label is not None:
         sub_lock.payment_method_label = payment_method_label

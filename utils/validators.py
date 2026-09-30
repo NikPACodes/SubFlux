@@ -211,6 +211,31 @@ def validator_subscription_status_change(status_current: str, status_new: str) -
         raise ValidationError(f"Переход из статуса {status_current} в статус {status_new} запрещён")
 
 
+def validator_workspace_group(*, workspace_id: int, ws_group: Optional[Any]) -> None:
+    """
+    Валидация WorkspaceGroup.
+
+    Проверки:
+    - workspace_id обязателен для проверки
+    - группа (ws_group) должна иметь атрибут 'workspace_id'
+    - группа (ws_group) должна соответствовать своему рабочему пространству
+    """
+
+    if ws_group is None:
+        return
+
+    if workspace_id is None:
+        raise ValidationError('Workspace ID не может быть пустым.')
+
+    ws_group_ws_id = getattr(ws_group, 'workspace_id', None)
+
+    if ws_group_ws_id is None:
+        raise ValidationError('WorkspaceGroup должна иметь workspace_id.')
+
+    if ws_group_ws_id != workspace_id:
+        raise ValidationError('WorkspaceGroup должна принадлежать Workspace подписки.')
+
+
 def validator_tree_integrity(*, instance: Any, parent_attr: str = 'parent', level_attr: str = 'level',
                                 workspace_id_attr: str = 'workspace_id', max_depth: int = 3) -> None:
     """

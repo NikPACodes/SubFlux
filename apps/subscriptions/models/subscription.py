@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -6,7 +5,7 @@ from .category import Category
 from .provider import Provider
 from apps.workspaces.models import Workspace, WorkspaceGroup
 
-from utils.validators import validator_currency, validator_timezone
+from utils.validators import validator_currency, validator_timezone, validator_workspace_group
 from utils.enums import SubscriptionStatus
 
 
@@ -90,6 +89,16 @@ class Subscription(models.Model):
             models.CheckConstraint(condition=models.Q(current_price_amount__gte=0),
                                     name="subscription_current_price_nonnegative"),
         ]
+
+
+    def clean(self) -> None:
+        """
+        Валидация Subscription.
+        """
+        super().clean()
+        # Проверка принадлежности WorkspaceGroup рабочему пространству подписки
+        validator_workspace_group(workspace_id=self.workspace_id, ws_group=self.ws_group)
+
 
     def __str__(self):
         return self.title
