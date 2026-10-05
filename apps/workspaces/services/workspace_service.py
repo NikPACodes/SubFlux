@@ -55,14 +55,14 @@ def set_default_workspace_status(*, user, status: str) -> Workspace:
     }
 
     if status not in allowed_statuses:
-        raise ValidationError("Недопустимый статус Workspace.")
+        raise ValidationError({"status": "Недопустимый статус Workspace."})
 
     # Блокируем объект
     workspace = Workspace.objects.select_for_update().get(owner=user, is_default=True)
 
     # Пользователь не может самостоятельно восстановить Workspace из системного состояния.
     if workspace.status not in allowed_statuses:
-        raise ValidationError(f"Изменение Workspace из статуса '{workspace.status}' недоступно.")
+        raise ValidationError({"status": f"Изменение Workspace из статуса '{workspace.status}' недоступно."})
 
     # Идемпотентность:
     # ACTIVE -> ACTIVE или DEACTIVATED -> DEACTIVATED

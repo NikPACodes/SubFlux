@@ -122,10 +122,10 @@ def create_schedule_from_remaining_period(*, sub: Subscription, remaining_billin
     last_schedule = get_last_schedule(sub)
 
     if remaining_billing_seconds is None:
-        raise ValidationError("remaining_billing_seconds обязателен.")
+        raise ValidationError({"remaining_billing_seconds": "remaining_billing_seconds обязателен."})
 
     if remaining_billing_seconds < 0:
-        raise ValidationError("remaining_billing_seconds не может быть отрицательным.")
+        raise ValidationError({"remaining_billing_seconds": "remaining_billing_seconds не может быть отрицательным."})
 
     if not last_schedule:
         raise ValidationError("Невозможно возобновить подписку: отсутствует базовое расписание.")
@@ -169,7 +169,7 @@ def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetim
         # 1) Расчет на неполный период
         # -----------------------------
         if remaining_billing_seconds < 0:
-            raise ValidationError("remaining_billing_seconds не может быть отрицательным.")
+            raise ValidationError({"remaining_billing_seconds": "remaining_billing_seconds не может быть отрицательным."})
 
         next_run_at = from_dt + timedelta(seconds=remaining_billing_seconds)
         local_next_run = timezone.localtime(next_run_at, tzone)
@@ -217,7 +217,7 @@ def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetim
         elif schedule.period_unit == PeriodUnit.YEAR:
             next_dtime = _next_for_year(local_dtime, schedule.period_interval)
         else:
-            raise ValidationError(f"Период не найден: {schedule.period_unit}")
+            raise ValidationError({"period_unit": f"Период не найден: {schedule.period_unit}"})
 
         # Возвращаем в UTC (для хранения)
         next_utc = next_dtime.astimezone(timezone.UTC)

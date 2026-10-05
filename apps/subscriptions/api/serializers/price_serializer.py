@@ -2,8 +2,7 @@ from rest_framework import serializers
 from apps.subscriptions.models import VerifiedPrice
 from utils.enums import PriceHistorySource
 from utils.validators import validator_price_history_source, validator_currency
-from django.core.exceptions import ValidationError
-from utils.api.errors import as_drf_validation_error
+from utils.api.errors import call_service
 
 
 class PriceInputSerializer(serializers.Serializer):
@@ -28,22 +27,19 @@ class PriceInputSerializer(serializers.Serializer):
             try:
                 verified_price = VerifiedPrice.objects.get(pk=verified_price_id, valid_to__isnull=True, is_active=True)
             except VerifiedPrice.DoesNotExist:
-                raise serializers.ValidationError('Активная VerifiedPrice не найдена')
+                raise serializers.ValidationError({'verified_price_id': 'Активная VerifiedPrice не найдена'})
 
         currency = attrs.get('currency')
         # Нормализация Currency
         if currency:
             attrs['currency'] = currency.strip().upper()
 
-        try:
-            validator_price_history_source(
-                source=attrs.get('source'),
-                verified_price=verified_price,
-                amount=attrs.get('amount'),
-                currency=attrs.get('currency'),
-            )
-        except ValidationError as exc:
-            raise as_drf_validation_error(exc)
+        call_service(validator_price_history_source,
+                     source=attrs.get('source'),
+                     verified_price=verified_price,
+                     amount=attrs.get('amount'),
+                     currency=attrs.get('currency'))
+
 
         # Нормализация структуры (для корректного создания Subscription)
         attrs['verified_price'] = verified_price

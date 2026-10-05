@@ -75,14 +75,14 @@ def set_workspace_group_parent(*, workspace: Workspace, ws_group_id: int,
     wsg = _get_workspace_group_for_update(workspace=workspace, ws_group_id=ws_group_id)
 
     if wsg.children.exists():
-        raise ValidationError('Невозможно сменить родительскую группу, т.к. группа сама является родительской')
+        raise ValidationError({'parent': 'Невозможно сменить родительскую группу, т.к. группа сама является родительской'})
 
     new_parent = None
     if new_parent_id is not None:
         new_parent = _get_workspace_group_for_update(workspace=workspace, ws_group_id=new_parent_id)
 
         if new_parent.pk == wsg.pk:
-            raise ValidationError('Группа не может быть parent для себя')
+            raise ValidationError({'parent': 'Группа не может быть parent для себя'})
 
     wsg.parent = new_parent
     wsg.set_level_from_parent()

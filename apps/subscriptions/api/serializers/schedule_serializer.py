@@ -2,8 +2,7 @@ from rest_framework import serializers
 
 from utils.enums import PeriodUnit
 from utils.validators import validator_billing_schedule_params
-from django.core.exceptions import ValidationError
-from utils.api.errors import as_drf_validation_error
+from utils.api.errors import call_service
 
 
 class ScheduleInputSerializer(serializers.Serializer):
@@ -18,15 +17,11 @@ class ScheduleInputSerializer(serializers.Serializer):
     grace_days = serializers.IntegerField(default=0)
 
     def validate(self, attrs):
-        try:
-            validator_billing_schedule_params(
-                period_unit=attrs.get('period_unit'),
-                period_interval=attrs.get('period_interval'),
-                anchor_day=attrs.get('anchor_day'),
-                anchor_weekday=attrs.get('anchor_weekday'),
-                grace_days=attrs.get('grace_days'),
-            )
-        except ValidationError as exc:
-            raise as_drf_validation_error(exc)
+        call_service(validator_billing_schedule_params,
+                     period_unit=attrs.get('period_unit'),
+                     period_interval=attrs.get('period_interval'),
+                     anchor_day=attrs.get('anchor_day'),
+                     anchor_weekday=attrs.get('anchor_weekday'),
+                     grace_days=attrs.get('grace_days'))
 
         return  attrs
