@@ -5,8 +5,6 @@ from rest_framework.response import Response
 
 from apps.workspaces.api.serializers import WorkspaceReadSerializer, WorkspaceStatusSerializer
 from apps.workspaces.selectors import get_workspace_default
-from apps.workspaces.services.workspace_service import set_default_workspace_status
-from utils.api.errors import call_service
 
 
 class DefaultWorkspaceViewSet(viewsets.GenericViewSet):
@@ -44,7 +42,6 @@ class DefaultWorkspaceViewSet(viewsets.GenericViewSet):
         По факту метод возвращает карточку 1 объекта.
         """
         workspace = self.get_object()
-
         serializer = self.get_serializer(workspace)
 
         return Response(
@@ -59,13 +56,10 @@ class DefaultWorkspaceViewSet(viewsets.GenericViewSet):
         Изменение статуса Default Workspace.
         """
         serializer = self.get_serializer(data=request.data)
-
         serializer.is_valid(raise_exception=True)
-
-        workspace = call_service(set_default_workspace_status,
-                                 user=request.user,
-                                 status=serializer.validated_data['status'])
-
+        # Внутри serializer вызывается сервисный слой (set_default_workspace_status)
+        workspace = serializer.save(user=request.user)
+        
         response_serializer = WorkspaceReadSerializer(workspace)
 
         return Response(

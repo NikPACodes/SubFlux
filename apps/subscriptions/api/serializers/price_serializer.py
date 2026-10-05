@@ -34,11 +34,13 @@ class PriceInputSerializer(serializers.Serializer):
         if currency:
             attrs['currency'] = currency.strip().upper()
 
-        call_service(validator_price_history_source,
-                     source=attrs.get('source'),
-                     verified_price=verified_price,
-                     amount=attrs.get('amount'),
-                     currency=attrs.get('currency'))
+        call_service(
+            validator_price_history_source,
+            source=attrs.get('source'),
+            verified_price=verified_price,
+            amount=attrs.get('amount'),
+            currency=attrs.get('currency')
+        )
 
 
         # Нормализация структуры (для корректного создания Subscription)

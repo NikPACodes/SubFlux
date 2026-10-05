@@ -17,11 +17,13 @@ class ScheduleInputSerializer(serializers.Serializer):
     grace_days = serializers.IntegerField(default=0)
 
     def validate(self, attrs):
-        call_service(validator_billing_schedule_params,
-                     period_unit=attrs.get('period_unit'),
-                     period_interval=attrs.get('period_interval'),
-                     anchor_day=attrs.get('anchor_day'),
-                     anchor_weekday=attrs.get('anchor_weekday'),
-                     grace_days=attrs.get('grace_days'))
+        call_service(
+            validator_billing_schedule_params,
+            period_unit=attrs.get('period_unit'),
+            period_interval=attrs.get('period_interval'),
+            anchor_day=attrs.get('anchor_day'),
+            anchor_weekday=attrs.get('anchor_weekday'),
+            grace_days=attrs.get('grace_days')
+        )
 
         return  attrs

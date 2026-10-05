@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
 from apps.workspaces.models import Workspace
+from apps.workspaces.services.workspace_service import set_default_workspace_status
+from utils.api.errors import call_service
 from utils.enums import WorkspaceStatus
 
 
@@ -38,3 +40,10 @@ class WorkspaceStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=[WorkspaceStatus.ACTIVE,
                                               WorkspaceStatus.DEACTIVATED],
                                      required=True)
+
+    def save(self, *, user):
+        return call_service(
+            set_default_workspace_status,
+            user=user,
+            status=self.validated_data['status']
+        )

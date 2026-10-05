@@ -157,8 +157,8 @@ def status_transition_calculation(*, subscription: Subscription, status_new: str
     }
 
     if status_new == SubscriptionStatus.TRIAL:
-        raise ValidationError("TRIAL нельзя устанавливать через оркестратор статуса. "
-                              "TRIAL допускается только при создании подписки.")
+        raise ValidationError({"status": "TRIAL нельзя устанавливать через оркестратор статуса. "
+                                         "TRIAL допускается только при создании подписки."})
 
     elif status_new == SubscriptionStatus.DELAYED:
         result["status"] = SubscriptionStatus.DELAYED
@@ -364,7 +364,7 @@ def update_subscription_data(*, subscription: Subscription,
     # Обновление простых полей
     if title is not None:
         if title == "":
-            raise ValidationError("Title не может быть пустым")
+            raise ValidationError({"title": "Title не может быть пустым"})
         sub_lock.title = title
         update_fields.append('title')
 
@@ -433,7 +433,7 @@ def set_subscription_price(*, subscription: Subscription,
     # Момент вступления цены в силу
     now = now or timezone.now()
     if effective_from and effective_from > now:
-        raise ValidationError("Значение effective_from в будущем не поддерживается.")
+        raise ValidationError({"effective_from": "Значение effective_from в будущем не поддерживается."})
     elif not effective_from:
         effective_from = now
 
@@ -449,7 +449,7 @@ def set_subscription_price(*, subscription: Subscription,
         prev_price.effective_to = effective_from
         prev_price.save(update_fields=["effective_to"])
     elif prev_price and prev_price.effective_from >= effective_from:
-        raise ValidationError("Значение effective_from должно быть больше текущей активной цены effective_from.")
+        raise ValidationError({"effective_from": "Значение effective_from должно быть больше текущей активной цены effective_from."})
 
     if source == PriceHistorySource.VERIFIED:
         new_price = PriceHistory.objects.create(subscription=subscription,
