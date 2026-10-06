@@ -1,4 +1,5 @@
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from utils.enums import WorkspaceType, WorkspaceStatus
 from django.conf import settings
@@ -76,6 +77,14 @@ class Workspace(models.Model):
             models.UniqueConstraint(fields=('owner', 'slug'),
                                     name='uniq_ws_owner_slug'),
         ]
+
+
+    def delete(self, *args, **kwargs):
+        if self.is_default:
+            raise ValidationError("Default Workspace нельзя удалить.")
+
+        return super().delete(*args, **kwargs)
+
 
     def __str__(self) -> str:
         return f"{self.title} ({self.code})"

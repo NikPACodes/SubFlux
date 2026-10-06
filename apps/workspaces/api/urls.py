@@ -4,7 +4,7 @@ from apps.workspaces.api.views import DefaultWorkspaceViewSet
 
 
 router = routers.DefaultRouter()
-router.register(r'/me', DefaultWorkspaceViewSet, basename='workspace-default')
+router.register(r'me', DefaultWorkspaceViewSet, basename='workspace-default')
 
 urlpatterns = [
     path('', include(router.urls)),
