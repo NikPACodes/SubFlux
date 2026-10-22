@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from apps.subscriptions.models import Subscription
+from apps.workspaces.models import Workspace, WorkspaceGroup
 from utils.enums import SubscriptionStatus
 from utils.api.errors import call_service
 from .price_serializer import PriceInputSerializer
@@ -22,6 +23,8 @@ class SubscriptionReadSerializer(serializers.ModelSerializer):
         model = Subscription
         fields = [
             'id',
+            'workspace_id',
+            'ws_group_id',
             'title',
             'description',
             'status',
@@ -50,6 +53,9 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     """
     Сериализатор для создания подписок
     """
+    workspace_id = serializers.PrimaryKeyRelatedField(source='workspace', queryset=Workspace.objects.none())
+    ws_group_id = serializers.PrimaryKeyRelatedField(source='ws_group', queryset=WorkspaceGroup.objects.none(),
+                                                     required=False, allow_null=True)
     title = serializers.CharField(max_length=255)
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     provider_id = serializers.IntegerField(required=False, allow_null=True)
@@ -80,8 +86,6 @@ class SubscriptionCreateSerializer(serializers.Serializer):
 
 
     def create(self, validated_data):
-        request = self.context['request']
-
         price_data = validated_data.pop('price')
         schedule_data = validated_data.pop('schedule')
 
@@ -100,7 +104,8 @@ class SubscriptionCreateSerializer(serializers.Serializer):
 
         return call_service(
             create_subscription_with_defaults,
-            owner = request.user,
+            workspace = validated_data['workspace'],
+            ws_group = validated_data.get('ws_group'),
             title = validated_data.get('title'),
             description = validated_data.get('description'),
             provider = provider,
@@ -125,30 +130,26 @@ class SubscriptionUpdateSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255, required=False)
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
-    category_id = serializers.IntegerField(required=False, allow_null=True)
+    ws_group_id = serializers.PrimaryKeyRelatedField(source='ws_group', queryset=WorkspaceGroup.objects.none(),
+                                                     required=False, allow_null=True)
+    category_id = serializers.PrimaryKeyRelatedField(source='category', queryset=Category.objects.all(),
+                                                     required=False, allow_null=True)
 
     billing_timezone = serializers.CharField(max_length=64, required=False, allow_blank=False, allow_null=False)
 
     payment_method_label = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
     owner_note = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
 
-    def validate_category_id(self, value):
-        if value is None:
-            return value
-        if not Category.objects.filter(pk=value).exists():
-            raise serializers.ValidationError("Category не найден")
-        return value
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance is not None:
+            # Выбираем группы принадлежащие Workspace
+            self.fields['ws_group_id'].queryset = WorkspaceGroup.objects.filter(workspace_id=self.instance.workspace_id)
 
     def update(self, instance, validated_data):
-        category = instance.category
-        if 'category_id' in validated_data:
-            category_id = validated_data.pop('category_id')
-            category = Category.objects.get(pk=category_id) if category_id else None
-
         return call_service(
             update_subscription_data,
             subscription=instance,
-            category=category,
             **validated_data
         )
 
@@ -196,16 +197,16 @@ class SubscriptionSetStatusSerializer(serializers.Serializer):
         started_at = attrs.get('started_at')
 
         if status == SubscriptionStatus.TRIAL:
-            raise serializers.ValidationError("TRIAL нельзя устанавливать через set_status.")
+            raise serializers.ValidationError({"status": "TRIAL нельзя устанавливать через set_status."})
 
         if status == SubscriptionStatus.DELAYED:
             if started_at is None:
-                raise serializers.ValidationError("Поле started_at является обязательным для статуса DELAYED")
+                raise serializers.ValidationError({"started_at": "Поле started_at является обязательным для статуса DELAYED"})
             if started_at <= timezone.now():
-                raise serializers.ValidationError("Для статуса DELAYED поле started_at должно быть больше текущей даты")
+                raise serializers.ValidationError({"started_at": "Для статуса DELAYED поле started_at должно быть больше текущей даты"})
         else:
             if started_at is not None:
-                raise serializers.ValidationError("Поле started_at заполняется исключительно для статуса DELAYED")
+                raise serializers.ValidationError({"started_at": "Поле started_at заполняется исключительно для статуса DELAYED"})
 
         return attrs
 
@@ -233,7 +234,7 @@ class SubscriptionCancelSerializer(serializers.Serializer):
         elif cancel_mode == "immediately":
             cancel_status = SubscriptionStatus.EXPIRED
         else:
-            raise serializers.ValidationError(f"Неизвестный режим {cancel_mode}")
+            raise serializers.ValidationError({"cancel_mode": f"Неизвестный режим {cancel_mode}"})
 
         return call_service(
             set_subscription_status,

@@ -26,7 +26,6 @@ from apps.subscriptions.models import (BillingSchedule,
                                        Category,)
 
 from apps.subscriptions.services.billing_service import (get_current_schedule,
-                                                         get_last_schedule,
                                                          close_current_schedule,
                                                          create_schedule_from_existing,
                                                          create_schedule_from_remaining_period,
@@ -42,6 +41,9 @@ from utils.validators import (validator_price_history_source,
                               validator_workspace_group,)
 
 #----------------------------------------------------------------------------------------------
+# Контрольное значение для проверки параметра (не передали / передали None)
+# Важно для PATCH
+_UNSET = object()
 
 @dataclass(frozen=True)
 class PriceInput:
@@ -344,13 +346,13 @@ def create_subscription_with_defaults(*, workspace: Workspace,
 
 @transaction.atomic
 def update_subscription_data(*, subscription: Subscription,
-                                title: Optional[str] = None,
-                                description: Optional[str] = None,
-                                ws_group: Optional[WorkspaceGroup] = None,
-                                category: Optional[Category] = None,
-                                billing_timezone: Optional[str] = None,
-                                payment_method_label: Optional[str] = None,
-                                owner_note: Optional[str] = None) -> Subscription:
+                                title: str | object = _UNSET,
+                                description: str | object = _UNSET,
+                                ws_group: WorkspaceGroup | object = _UNSET,
+                                category: Category | object = _UNSET,
+                                billing_timezone: str | object = _UNSET,
+                                payment_method_label: str | object = _UNSET,
+                                owner_note: str | object = _UNSET) -> Subscription:
     """
     Обновление простых полей подписки
 
@@ -362,44 +364,63 @@ def update_subscription_data(*, subscription: Subscription,
     update_fields = []
 
     # Обновление простых полей
-    if title is not None:
-        if title == "":
+    # Title
+    if title is not _UNSET:
+        if not title:
             raise ValidationError({"title": "Title не может быть пустым"})
-        sub_lock.title = title
-        update_fields.append('title')
+        if title != sub_lock.title:
+            sub_lock.title = title
+            update_fields.append('title')
 
-    if description is not None:
-        sub_lock.description = description
-        update_fields.append('description')
+    # Description
+    if description is not _UNSET:
+        if description != sub_lock.description:
+            sub_lock.description = description
+            update_fields.append('description')
 
-    if ws_group is not None:
-        validator_workspace_group(workspace_id=sub_lock.workspace_id, ws_group=ws_group)
-        sub_lock.ws_group = ws_group
-        update_fields.append("ws_group")
+    # WorkspaceGroup
+    if ws_group is not _UNSET:
+        if ws_group is not None:
+            validator_workspace_group(workspace_id=sub_lock.workspace_id, ws_group=ws_group)
+        # Проверяем через PK (не вызывает доп. SQL-запрос по WorkspaceGroup)
+        ws_group_id = ws_group.pk if ws_group is not None else None
+        if ws_group_id != sub_lock.ws_group_id:
+            sub_lock.ws_group = ws_group
+            update_fields.append('ws_group')
 
-    if payment_method_label is not None:
-        sub_lock.payment_method_label = payment_method_label
-        update_fields.append('payment_method_label')
+    # Payment method
+    if payment_method_label is not _UNSET:
+        if payment_method_label != sub_lock.payment_method_label:
+            sub_lock.payment_method_label = payment_method_label
+            update_fields.append('payment_method_label')
 
-    if owner_note is not None:
-        sub_lock.owner_note = owner_note
-        update_fields.append('owner_note')
+    # Owner note
+    if owner_note is not _UNSET:
+        if owner_note != sub_lock.owner_note:
+            sub_lock.owner_note = owner_note
+            update_fields.append('owner_note')
 
-    if category is not None:
-        sub_lock.category = category
-        update_fields.append('category')
+    # Category
+    if category is not _UNSET:
+        # Проверяем через PK (не вызывает доп. SQL-запрос по Category)
+        category_id = category.pk if category is not None else None
+        if category_id != sub_lock.category_id:
+            sub_lock.category = category
+            update_fields.append('category')
 
-    if billing_timezone is not None:
+    # Billing timezone
+    if billing_timezone is not _UNSET:
         validator_timezone(billing_timezone)
         if billing_timezone != sub_lock.billing_timezone:
             sub_lock.billing_timezone = billing_timezone
-            update_fields.append("billing_timezone")
+            update_fields.append('billing_timezone')
 
+    # Update Fields
     if update_fields:
         update_fields.append('update_at')
         sub_lock.save(update_fields=update_fields)
 
-        if "billing_timezone" in update_fields:
+        if 'billing_timezone' in update_fields:
             _recalculate_schedule(sub_lock)
 
     return sub_lock
