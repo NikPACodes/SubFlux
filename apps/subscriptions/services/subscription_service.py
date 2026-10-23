@@ -347,12 +347,12 @@ def create_subscription_with_defaults(*, workspace: Workspace,
 @transaction.atomic
 def update_subscription_data(*, subscription: Subscription,
                                 title: str | object = _UNSET,
-                                description: str | object = _UNSET,
-                                ws_group: WorkspaceGroup | object = _UNSET,
-                                category: Category | object = _UNSET,
+                                description: str | None | object = _UNSET,
+                                ws_group: WorkspaceGroup | None | object = _UNSET,
+                                category: Category | None | object = _UNSET,
                                 billing_timezone: str | object = _UNSET,
-                                payment_method_label: str | object = _UNSET,
-                                owner_note: str | object = _UNSET) -> Subscription:
+                                payment_method_label: str | None | object = _UNSET,
+                                owner_note: str | None | object = _UNSET) -> Subscription:
     """
     Обновление простых полей подписки
 

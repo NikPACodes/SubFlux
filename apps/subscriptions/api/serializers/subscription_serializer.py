@@ -22,13 +22,15 @@ class SubscriptionReadSerializer(serializers.ModelSerializer):
     """
     provider_name = serializers.CharField(source='provider.name', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
+    ws_group_id = serializers.IntegerField(read_only=True)
+    ws_group_title = serializers.CharField(source='ws_group.title', read_only=True,default=None)
 
     class Meta:
         model = Subscription
         fields = [
             'id',
-            'workspace_id',
             'ws_group_id',
+            'ws_group_title',
             'title',
             'description',
             'status',

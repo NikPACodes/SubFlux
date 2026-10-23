@@ -13,7 +13,7 @@ from apps.subscriptions.services.subscription_service import set_subscription_st
 from apps.workspaces.models import Workspace
 from apps.workspaces.selectors import get_workspace_default
 
-from utils.enums import SubscriptionStatus, WorkspaceStatus
+from utils.enums import SubscriptionStatus
 from utils.api.errors import call_service
 
 #---------------------------------------------------------------------------------
