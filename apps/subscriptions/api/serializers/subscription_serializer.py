@@ -1,15 +1,19 @@
 from rest_framework import serializers
 from django.utils import timezone
-from apps.subscriptions.models import Subscription
-from apps.workspaces.models import Workspace, WorkspaceGroup
-from utils.enums import SubscriptionStatus
-from utils.api.errors import call_service
-from .price_serializer import PriceInputSerializer
-from .schedule_serializer import ScheduleInputSerializer
-from apps.subscriptions.models import Provider, Category
+
+from apps.subscriptions.models import Subscription, Provider, Category
 from apps.subscriptions.services.subscription_service import (create_subscription_with_defaults, update_subscription_data,
                                                               set_subscription_price, set_subscription_status,
                                                               PriceInput, ScheduleInput)
+from apps.workspaces.models import Workspace, WorkspaceGroup
+from apps.workspaces.selectors import get_workspace_default
+
+from utils.enums import SubscriptionStatus
+from utils.api.errors import call_service
+
+from .price_serializer import PriceInputSerializer
+from .schedule_serializer import ScheduleInputSerializer
+
 
 #------------------------------------ READ Subscription ------------------------------------
 class SubscriptionReadSerializer(serializers.ModelSerializer):
@@ -51,15 +55,20 @@ class SubscriptionReadSerializer(serializers.ModelSerializer):
 #------------------------------------ CREATE Subscription ------------------------------------
 class SubscriptionCreateSerializer(serializers.Serializer):
     """
-    Сериализатор для создания подписок
+    Сериализатор для создания подписок.
+
+    Примечания:
+    - Workspace вычисляется и приходит из SubscriptionViewSet
+    - в OSS подписка создается исключительно в Default Workspace пользователя.
     """
-    workspace_id = serializers.PrimaryKeyRelatedField(source='workspace', queryset=Workspace.objects.none())
     ws_group_id = serializers.PrimaryKeyRelatedField(source='ws_group', queryset=WorkspaceGroup.objects.none(),
                                                      required=False, allow_null=True)
     title = serializers.CharField(max_length=255)
     description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    provider_id = serializers.IntegerField(required=False, allow_null=True)
-    category_id = serializers.IntegerField(required=False, allow_null=True)
+    provider_id = serializers.PrimaryKeyRelatedField(source='provider', queryset=Provider.objects.all(),
+                                                     required=False, allow_null=True)
+    category_id = serializers.PrimaryKeyRelatedField(source='category', queryset=Category.objects.all(),
+                                                     required=False, allow_null=True)
     started_at = serializers.DateTimeField(required=True, allow_null=True)
     ended_at = serializers.DateTimeField(required=False, allow_null=True)
     billing_timezone = serializers.CharField(max_length=64, required=False, allow_blank=False, allow_null=False)
@@ -69,54 +78,32 @@ class SubscriptionCreateSerializer(serializers.Serializer):
     price = PriceInputSerializer()
     schedule = ScheduleInputSerializer()
 
-    def validate_provider_id(self, value):
-        if value is None:
-            return value
-        if not Provider.objects.filter(pk=value).exists():
-            raise serializers.ValidationError("Provider не найден")
-        return value
 
-
-    def validate_category_id(self, value):
-        if value is None:
-            return value
-        if not Category.objects.filter(pk=value).exists():
-            raise serializers.ValidationError("Category не найден")
-        return value
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._workspace = self.context.get('workspace')
+        # Выбираем группы принадлежащие Workspace
+        if self._workspace is not None:
+            self.fields['ws_group_id'].queryset = WorkspaceGroup.objects.filter(workspace=self._workspace)
 
 
     def create(self, validated_data):
+        # Страховка чтобы не создать Subscription без Workspace
+        if self._workspace is None:
+            raise AssertionError("Workspace не определен.")
+
         price_data = validated_data.pop('price')
-        schedule_data = validated_data.pop('schedule')
-
-        provider = None
-        provider_id = validated_data.pop('provider_id', None)
-        if provider_id is not None:
-            provider = Provider.objects.get(pk=provider_id)
-
-        category = None
-        category_id = validated_data.pop('category_id', None)
-        if category_id is not None:
-            category = Category.objects.get(pk=category_id)
-
         price_input = PriceInput(**price_data)
+
+        schedule_data = validated_data.pop('schedule')
         schedule_input = ScheduleInput(**schedule_data)
 
         return call_service(
             create_subscription_with_defaults,
-            workspace = validated_data['workspace'],
-            ws_group = validated_data.get('ws_group'),
-            title = validated_data.get('title'),
-            description = validated_data.get('description'),
-            provider = provider,
-            category = category,
-            started_at = validated_data.get('started_at'),
-            ended_at = validated_data.get('ended_at'),
-            billing_timezone  = validated_data.get('billing_timezone'),
-            payment_method_label = validated_data.get('payment_method_label'),
-            owner_note = validated_data.get('owner_note'),
+            workspace = self._workspace,
             price = price_input,
             schedule = schedule_input,
+            **validated_data,
         )
 
 
@@ -140,11 +127,13 @@ class SubscriptionUpdateSerializer(serializers.Serializer):
     payment_method_label = serializers.CharField(max_length=64, required=False, allow_blank=True, allow_null=True)
     owner_note = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
 
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance is not None:
             # Выбираем группы принадлежащие Workspace
             self.fields['ws_group_id'].queryset = WorkspaceGroup.objects.filter(workspace_id=self.instance.workspace_id)
+
 
     def update(self, instance, validated_data):
         return call_service(

@@ -1,24 +1,28 @@
-from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
-from apps.subscriptions.api.permissions import IsOwner
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+
 from apps.subscriptions.api.serializers import (SubscriptionSetPriceSerializer,
                                                 SubscriptionSetStatusSerializer, SubscriptionCancelSerializer,
                                                 SubscriptionReadSerializer, SubscriptionCreateSerializer, SubscriptionUpdateSerializer)
 from apps.subscriptions.models import Subscription
 from apps.subscriptions.services.subscription_service import set_subscription_status
-from rest_framework.response import Response
-from utils.enums import SubscriptionStatus
+from apps.workspaces.models import Workspace
+from apps.workspaces.selectors import get_workspace_default
+
+from utils.enums import SubscriptionStatus, WorkspaceStatus
+from utils.api.errors import call_service
+
+#---------------------------------------------------------------------------------
 
 class SubscriptionViewSet(ModelViewSet):
     """
     API ViewSet для получения/обновления/мягкого удаления данных по подпискам
-
-    Данные подписок доступны только владельцу
     """
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         """
@@ -45,8 +49,35 @@ class SubscriptionViewSet(ModelViewSet):
         return SubscriptionReadSerializer
 
 
+    def get_workspace(self) -> Workspace:
+        """
+        Получаем Workspace пользователя.
+
+        Примечание:
+        - в OSS поддерживается работа только с Default Workspace пользователя.
+        """
+        if not hasattr(self, '_workspace'):
+            self._workspace = get_workspace_default(user=self.request.user)
+        return self._workspace
+
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        # Передаём Workspace в контекст сериализатора при создании Subscription.
+        # Для остальных операций Workspace определяется через существующую Subscription.
+        if self.action == 'create':
+            context['workspace'] = self.get_workspace()
+        return context
+
+
     def get_queryset(self):
-        return Subscription.objects.filter(owner=self.request.user, is_deleted=False).select_related('category', 'provider').order_by('-create_at')
+        """
+        Получаем Subscription по Workspace.
+        """
+        return (Subscription.objects.filter(workspace=self.get_workspace(), is_deleted=False)
+                                    .select_related('workspace', 'ws_group', 'category', 'provider')
+                                    .order_by('-create_at'))
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -57,6 +88,7 @@ class SubscriptionViewSet(ModelViewSet):
             SubscriptionReadSerializer(subscription).data,
             status=status.HTTP_201_CREATED,
         )
+
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -70,12 +102,15 @@ class SubscriptionViewSet(ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
+
     def destroy(self, request, *args, **kwargs):
         return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+
 
     @action(detail=True, methods=['post'], url_path='set-price')
     def set_price(self, request, pk=None):
@@ -89,6 +124,7 @@ class SubscriptionViewSet(ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+
     @action(detail=True, methods=['post'], url_path='set-status')
     def set_status(self, request, pk=None):
         subscription = self.get_object()
@@ -100,6 +136,7 @@ class SubscriptionViewSet(ModelViewSet):
             SubscriptionReadSerializer(subscription).data,
             status=status.HTTP_200_OK,
         )
+
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
@@ -113,27 +150,37 @@ class SubscriptionViewSet(ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+
     @action(detail=True, methods=['post'])
     def pause(self, request, pk=None):
         subscription = self.get_object()
         if subscription.status != SubscriptionStatus.ACTIVE:
-            raise ValidationError(f"Приостановка доступна только для действующих (активных) подписок.")
+            raise ValidationError({"status": "Приостановка доступна только для действующих (активных) подписок."})
 
-        subscription = set_subscription_status(subscription=subscription,
-                                               status_new=SubscriptionStatus.PAUSED)
+        subscription = call_service(
+                           set_subscription_status,
+                           subscription=subscription,
+                           status_new=SubscriptionStatus.PAUSED
+                        )
+
         return Response(
             SubscriptionReadSerializer(subscription).data,
             status=status.HTTP_200_OK,
         )
 
+
     @action(detail=True, methods=['post'])
     def resume(self, request, pk=None):
         subscription = self.get_object()
         if subscription.status != SubscriptionStatus.PAUSED:
-            raise ValidationError(f"Возможно возобновить только приостановленную подписку.")
+            raise ValidationError({"status": "Возможно возобновить только приостановленную подписку."})
 
-        subscription = set_subscription_status(subscription=subscription,
-                                                   status_new=SubscriptionStatus.ACTIVE)
+        subscription = call_service(
+                           set_subscription_status,
+                           subscription=subscription,
+                           status_new=SubscriptionStatus.ACTIVE
+                           )
+
         return Response(
             SubscriptionReadSerializer(subscription).data,
             status=status.HTTP_200_OK,
