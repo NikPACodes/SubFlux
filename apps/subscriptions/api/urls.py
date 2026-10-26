@@ -1,14 +1,10 @@
-from django.urls import path, include
+"""
+URL-маршруты Subscription.
+"""
 from  rest_framework import routers
-from .views import CategoryViewSet, CategoryReadViewSet, ProviderViewSet, ProviderReadViewSet, SubscriptionViewSet
+from .views import SubscriptionViewSet
 
-router = routers.DefaultRouter()
-router.register(r'admin/categories', CategoryViewSet, basename='admin-categories')
-router.register(r'categories', CategoryReadViewSet, basename='categories')
-router.register(r'admin/providers', ProviderViewSet, basename='admin-providers')
-router.register(r'providers', ProviderReadViewSet, basename='providers')
+router = routers.SimpleRouter()
 router.register(r'subscriptions', SubscriptionViewSet, basename='subscriptions')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls

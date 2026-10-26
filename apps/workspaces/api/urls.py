@@ -1,11 +1,14 @@
-from django.urls import path, include
+"""
+URL-маршруты Workspace.
+
+В OSS-версии SubFlux поддерживается работа только с
+Default Workspace текущего пользователя.
+"""
 from rest_framework import routers
 from apps.workspaces.api.views import DefaultWorkspaceViewSet
 
 
-router = routers.DefaultRouter()
-router.register(r'me', DefaultWorkspaceViewSet, basename='workspace-default')
+router = routers.SimpleRouter()
+router.register(r'', DefaultWorkspaceViewSet, basename='workspace-default')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls
