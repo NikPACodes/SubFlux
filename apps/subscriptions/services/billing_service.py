@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from apps.subscriptions.models import BillingSchedule, Subscription
+from apps.workspaces.models import Workspace
 
 from utils.enums import PeriodUnit
 from utils.validators import validator_billing_schedule_params
@@ -59,7 +60,7 @@ def _next_for_year(dtime: datetime, interval: int) -> datetime:
 
 #----------------------------------------------------------------------------------------------
 
-def get_current_schedule(sub: Subscription) -> BillingSchedule:
+def get_current_schedule(sub: Subscription) -> BillingSchedule | None:
     """
     Получение активного расписания по подписке
 
@@ -68,14 +69,14 @@ def get_current_schedule(sub: Subscription) -> BillingSchedule:
     return BillingSchedule.objects.filter(subscription=sub, is_current=True).order_by("-create_at").first()  #First для подстраховки
 
 
-def get_last_schedule(sub: Subscription) -> BillingSchedule:
+def get_last_schedule(sub: Subscription) -> BillingSchedule | None:
     """
     Получение последнего расписания по подписке (по дате создания)
     """
     return BillingSchedule.objects.filter(subscription=sub).order_by("-create_at").first()
 
 
-def close_current_schedule(sub: Subscription) -> BillingSchedule|None:
+def close_current_schedule(sub: Subscription) -> BillingSchedule | None:
     """
     Закрытие текущего активного расписания
     """
@@ -145,7 +146,10 @@ def create_schedule_from_remaining_period(*, sub: Subscription, remaining_billin
 #----------------------------------------------------------------------------------------------
 
 @transaction.atomic
-def recalculate_schedule_next_run(schedule: BillingSchedule, *, from_dt: datetime, remaining_billing_seconds: int = None) -> BillingSchedule:
+def recalculate_schedule_next_run(schedule: BillingSchedule,
+                                  *,
+                                  from_dt: datetime,
+                                  remaining_billing_seconds: int | None = None) -> BillingSchedule:
     """
     Пересчитывает schedule.next_run_at, учитывая timezone подписки.
 
@@ -234,3 +238,33 @@ def sync_subscription_next_billing(sub: Subscription) -> None:
     current = BillingSchedule.objects.filter(subscription=sub, is_current=True).order_by("-create_at").first()
     sub.next_billing_at = current.next_run_at if current else None
     sub.save(update_fields=["next_billing_at", "update_at"])
+
+
+# TODO Доделать метод
+@transaction.atomic
+def sync_subscription_billing(*, subscription: Subscription, from_dt=None) -> Subscription:
+    """
+    Синхронизация Subscription с флагом billing_sync_required и создание BillingSchedule.
+    """
+    pass
+
+
+#----------------------------------------------------------------------------------------------
+
+@transaction.atomic
+def reset_workspace_billing(workspace: Workspace) -> None:
+    """
+    Сброс billing-расписаний по Workspace.
+
+    Для всех активных данных Workspace:
+    - Subscription.billing_sync_required = True;
+    - Subscription.next_billing_at = None;
+    - все текущие BillingSchedule переводятся в is_current=False.
+    """
+    # Выборка всех подписок Workspace + обновляем
+    (Subscription.objects.filter(workspace=workspace, is_deleted=False)
+                         .update(billing_sync_required=True, next_billing_at=None))
+
+    # Выборка и деактивация всех текущих расписаний по Workspace
+    (BillingSchedule.objects.filter(subscription__workspace=workspace, subscription__is_deleted=False, is_current=True)
+                            .update(is_current=False))

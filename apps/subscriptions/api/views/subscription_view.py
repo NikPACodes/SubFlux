@@ -10,10 +10,11 @@ from apps.subscriptions.api.serializers import (SubscriptionSetPriceSerializer,
                                                 SubscriptionReadSerializer, SubscriptionCreateSerializer, SubscriptionUpdateSerializer)
 from apps.subscriptions.models import Subscription
 from apps.subscriptions.services.subscription_service import set_subscription_status
+from apps.workspaces.api.exceptions import WorkspaceDeactivated
 from apps.workspaces.models import Workspace
 from apps.workspaces.selectors import get_workspace_default
 
-from utils.enums import SubscriptionStatus
+from utils.enums import SubscriptionStatus, WorkspaceStatus
 from utils.api.errors import call_service
 
 #---------------------------------------------------------------------------------
@@ -54,10 +55,15 @@ class SubscriptionViewSet(ModelViewSet):
         Получаем Workspace пользователя.
 
         Примечание:
-        - в OSS поддерживается работа только с Default Workspace пользователя.
+        - В OSS поддерживается работа только с Default Workspace пользователя.
+        - Если Workspace деактивирован, с дочерними ресурсами запрещена.
         """
         if not hasattr(self, '_workspace'):
             self._workspace = get_workspace_default(user=self.request.user)
+
+        if self._workspace.status == WorkspaceStatus.DEACTIVATED:
+            raise WorkspaceDeactivated()
+
         return self._workspace
 
 

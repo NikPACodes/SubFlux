@@ -66,6 +66,12 @@ class Subscription(models.Model):
     # Факт последнего списания
     last_billed_at = models.DateTimeField(blank=True, null=True)
 
+    # Требуется актуализация расчётных данных подписки.
+    # Пока флаг установлен, автоматические расчёты не выполняются.
+    billing_sync_required = models.BooleanField(default=False, db_index=True)
+
+    # Служебные метаданные:
+    # - для status.PAUSE: "paused_at" + "remaining_billing_seconds"
     meta = models.JSONField(default=dict, blank=True)
 
     is_deleted = models.BooleanField(default=False)

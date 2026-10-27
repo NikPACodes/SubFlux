@@ -4,6 +4,7 @@ from django.utils import timezone
 from apps.subscriptions.models import BillingSchedule
 from apps.subscriptions.services.billing_service import recalculate_schedule_next_run, sync_subscription_next_billing
 
+from utils.enums import WorkspaceStatus
 
 @transaction.atomic
 def recalculate_due_schedules(limit: int = 500) -> int:
@@ -16,7 +17,11 @@ def recalculate_due_schedules(limit: int = 500) -> int:
     now = timezone.now()
 
     # находит расписания, у которых next_run_at <= now
-    schedules = BillingSchedule.objects.select_related("subscription").filter(is_current=True, next_run_at__lte=now).order_by("next_run_at")[:limit]
+    schedules = (BillingSchedule.objects.select_related('subscription', 'subscription__workspace')
+                                       .filter(is_current=True, next_run_at__lte=now,
+                                               subscription__workspace__status=WorkspaceStatus.ACTIVE, # Подстраховка
+                                               subscription__billing_sync_required=False)              #
+                                       .order_by('next_run_at')[:limit])
 
     processed = 0
     for schedule in schedules:

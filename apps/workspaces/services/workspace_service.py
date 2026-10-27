@@ -6,10 +6,14 @@ Workspace service
 """
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+
+from apps.subscriptions.services.billing_service import reset_workspace_billing
 from apps.workspaces.models import Workspace
 from apps.workspaces.utils import gen_ws_code
+
 from utils.generators import gen_slug
 from utils.enums import WorkspaceStatus
+
 
 @transaction.atomic
 def create_workspace(*, owner, title: str, workspace_type: str,
@@ -45,8 +49,10 @@ def set_default_workspace_status(*, user, status: str) -> Workspace:
     - ACTIVE -> DEACTIVATED;
     - DEACTIVATED -> ACTIVE.
 
-    Повторная установка текущего статуса является допустимой
-    и не приводит к изменению объекта.
+    Примечания:
+    - Повторная установка текущего статуса является допустимой и не приводит к изменению объекта.
+    - При деактивации, сбрасывается расписание всех Subscription данного Workspace.
+    - При повторной активации, необходима синхронизация расписаний Subscription данного Workspace.
     """
 
     allowed_statuses = {
@@ -69,8 +75,13 @@ def set_default_workspace_status(*, user, status: str) -> Workspace:
     if workspace.status == status:
         return workspace
 
+    pre_status = workspace.status
     workspace.status = status
     workspace.save(update_fields=['status',
                                   'updated_at'])
+
+    # ACTIVE -> DEACTIVATED
+    if pre_status == WorkspaceStatus.ACTIVE and status == WorkspaceStatus.DEACTIVATED:
+        reset_workspace_billing(workspace=workspace)
 
     return workspace
